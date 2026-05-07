@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AU AI Lab: Gradient Descent Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+
+        body {
+            background: #010409;
+            color: #e6edf3;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .math-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .glass {
+            background: rgba(13, 17, 23, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid #30363d;
+        }
+
+        #regLine {
+            transition: all 0.1s linear;
+        }
+
+        /* Fast transition for iteration feel */
+        .grid-line {
+            stroke: #1e293b;
+            stroke-width: 0.5;
+        }
+    </style>
+</head>
+
+<body class="p-4">
+
+    <div class="max-w-6xl mx-auto space-y-4">
+        <div class="glass p-5 rounded-2xl border-l-4 border-blue-500">
+            <h1 class="text-xl font-bold text-white uppercase tracking-tighter">Lab 05: Gradient Descent (LMS) Simulator
+            </h1>
+            <p class="text-slate-400 text-[10px] mt-1 italic">Air University - College of Engineering</p>
+        </div>
+
+        <div class="grid lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-4 space-y-4">
+                <div class="glass p-4 rounded-2xl shadow-xl">
+                    <h2 class="text-[10px] font-bold text-blue-400 mb-3 uppercase tracking-widest">Update Logic (The
+                        Math)</h2>
+
+                    <div
+                        class="bg-black/40 p-3 rounded-lg text-[10px] math-font space-y-2 mb-4 border border-slate-800">
+                        <p class="text-slate-500">// Update Rules for Students:</p>
+                        <p class="text-blue-300">θ₀ = θ₀ - α · (1/m) ∑(h(x) - y)</p>
+                        <p class="text-blue-300">θ₁ = θ₁ - α · (1/m) ∑((h(x) - y) · x)</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] text-slate-500 uppercase">Learning Rate (α)</label>
+                            <select id="alpha" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs">
+                                <option value="0.01">0.01 (Stable)</option>
+                                <option value="0.1">0.1 (Fast)</option>
+                                <option value="0.001">0.001 (Very Slow)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="p-2 bg-slate-900 rounded border border-slate-800">
+                                <p class="text-[9px] text-slate-500">Iteration</p>
+                                <p id="iterCount" class="text-lg font-bold math-font">0</p>
+                            </div>
+                            <div class="p-2 bg-slate-900 rounded border border-slate-800">
+                                <p class="text-[9px] text-slate-500">Loss (MSE)</p>
+                                <p id="lossVal" class="text-lg font-bold math-font">---</p>
+                            </div>
+                        </div>
+
+                        <button onclick="startDescent()" id="runBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-lg font-bold text-xs transition-all">
+                            RUN GRADIENT DESCENT
+                        </button>
+                        <button onclick="resetSim()"
+                            class="w-full text-slate-500 text-[9px] uppercase tracking-widest">Reset Simulation</button>
+                    </div>
+                </div>
+
+                <div class="glass p-4 rounded-2xl overflow-hidden">
+                    <p class="text-[9px] text-slate-500 uppercase mb-2">Stock Market Snippet (Interest vs Price)</p>
+                    <table class="w-full text-[9px] math-font text-center">
+                        <tr class="text-slate-600 border-b border-slate-800">
+                            <th>X (%)</th>
+                            <th>Y (Price)</th>
+                        </tr>
+                        <tr>
+                            <td>2.75</td>
+                            <td>1464</td>
+                        </tr>
+                        <tr>
+                            <td>2.50</td>
+                            <td>1394</td>
+                        </tr>
+                        <tr>
+                            <td>2.00</td>
+                            <td>1130</td>
+                        </tr>
+                        <tr>
+                            <td>1.75</td>
+                            <td>971</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 glass p-6 rounded-3xl relative min-h-[400px] flex flex-col">
+                <div class="absolute top-4 left-6 flex gap-4 text-[10px] uppercase font-bold">
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full"></span> Real Data
+                    </div>
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 bg-blue-500 rounded-full"></span> Learned
+                        Model</div>
+                </div>
+
+                <svg viewBox="0 0 400 300" class="w-full h-full mt-4 overflow-visible" id="chart">
+                    <line x1="0" y1="300" x2="400" y2="300" stroke="#334155" />
+                    <line x1="0" y1="0" x2="0" y2="300" stroke="#334155" />
+
+                    <g id="points" fill="#ef4444"></g>
+
+                    <line id="regLine" x1="0" y1="300" x2="400" y2="300" stroke="#3b82f6" stroke-width="3"
+                        stroke-linecap="round" />
+                </svg>
+
+                <div class="mt-4 text-[10px] text-slate-500 text-center uppercase tracking-widest">
+                    Graph showing Interest Rate (X) vs Stock Index Price (Y)
+                </div>
+            </div>
+        </div>
+
+        <!-- <div class="glass p-6 rounded-3xl border border-blue-900/30">
+            <h3 class="text-blue-400 font-bold mb-4 uppercase tracking-tighter text-sm italic">Live Derivation Tracking
+            </h3>
+            <div class="space-y-4 math-font text-[12px]">
+                <div class="p-3 bg-blue-500/5 rounded-xl border border-blue-500/20">
+                    <p class="text-slate-500 mb-1">Current Hypothesis:</p>
+                    <p class="text-xl text-white">h(x) = <span id="valT0" class="text-blue-400">10</span> + <span
+                            id="valT1" class="text-blue-400">10</span>x</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-red-500/5 rounded-xl border border-red-500/20">
+                        <p class="text-slate-500 mb-1">∂J/∂θ₀ (Gradient)</p>
+                        <p id="grad0" class="text-lg text-red-400 font-bold">0.00</p>
+                    </div>
+                    <div class="p-3 bg-red-500/5 rounded-xl border border-red-500/20">
+                        <p class="text-slate-500 mb-1">∂J/∂θ₁ (Gradient)</p>
+                        <p id="grad1" class="text-lg text-red-400 font-bold">0.00</p>
+                    </div>
+                </div>
+
+                <p class="text-[10px] text-slate-500 italic">Notice: The gradients get smaller as the model reaches the
+                    bottom of the "Valley" (Cost Function).</p>
+            </div>
+        </div> -->
+    </div>
+
+    <script>
+        const data = [
+            { x: 2.75, y: 1464 }, { x: 2.5, y: 1394 }, { x: 2.5, y: 1357 },
+            { x: 2.5, y: 1293 }, { x: 2.25, y: 1159 }, { x: 2.0, y: 1130 },
+            { x: 1.75, y: 971 }, { x: 1.75, y: 884 }, { x: 1.75, y: 719 }
+        ];
+
+        // Scaling functions
+        const scaleX = (x) => (x - 1.5) * 266;
+        const scaleY = (y) => 300 - ((y - 700) / 800 * 300);
+
+        // Render Data Points
+        const pointsG = document.getElementById('points');
+        data.forEach(p => {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", scaleX(p.x));
+            circle.setAttribute("cy", scaleY(p.y));
+            circle.setAttribute("r", 4);
+            pointsG.appendChild(circle);
+        });
+
+        let t0 = 10, t1 = 10;
+        let running = false;
+        let iteration = 0;
+
+        function startDescent() {
+            if (running) return;
+            running = true;
+            document.getElementById('runBtn').disabled = true;
+            const alpha = parseFloat(document.getElementById('alpha').value);
+
+            const loop = setInterval(() => {
+                if (iteration >= 100 || !running) {
+                    clearInterval(loop);
+                    running = false;
+                    document.getElementById('runBtn').disabled = false;
+                    return;
+                }
+
+                // Gradient Descent Calculation
+                let sum0 = 0, sum1 = 0, mse = 0;
+                data.forEach(p => {
+                    let prediction = t0 + t1 * p.x;
+                    let error = prediction - p.y;
+                    sum0 += error;
+                    sum1 += error * p.x;
+                    mse += Math.pow(error, 2);
+                });
+
+                t0 = t0 - alpha * (1 / data.length) * sum0;
+                t1 = t1 - alpha * (1 / data.length) * sum1;
+
+                // Update Line
+                updateLine(t0, t1);
+
+                iteration++;
+                document.getElementById('iterCount').innerText = iteration;
+                document.getElementById('lossVal').innerText = (mse / (2 * data.length)).toFixed(0);
+            }, 100);
+        }
+
+        function updateLine(m0, m1) {
+            const line = document.getElementById('regLine');
+            // x = 1.5
+            const y1 = m0 + m1 * 1.5;
+            // x = 3.0
+            const y2 = m0 + m1 * 3.0;
+
+            line.setAttribute("y1", scaleY(y1));
+            line.setAttribute("y2", scaleY(y2));
+        }
+
+        function resetSim() {
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air University - AI Master Assignment Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .node {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border: 3px solid #1e3a8a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 50;
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+
+        .node.active {
+            background: #fbbf24;
+            border-color: #d97706;
+            transform: scale(1.15);
+            box-shadow: 0 0 15px #fbbf24;
+        }
+
+        .node.visited {
+            background: #3b82f6;
+            border-color: #1d4ed8;
+            color: white;
+        }
+
+        .node.path-highlight {
+            background: #22c55e !important;
+            border-color: #15803d !important;
+            color: white !important;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .edge-label {
+            background: #fff;
+            color: #b91c1c;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            position: absolute;
+            z-index: 60;
+            border: 1px solid #fee2e2;
+            transform: translate(-50%, -50%);
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .page-break {
+                page-break-after: always;
+                display: block !important;
+            }
+
+            .main-container {
+                width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .canvas-area {
+                border: 2px solid #000 !important;
+                height: 460px !important;
+                width: 100% !important;
+                position: relative !important;
+            }
+
+            .print-table {
+                display: table !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 10px;
+            }
+
+            .print-table th,
+            .print-table td {
+                border: 1px solid black !important;
+                padding: 6px !important;
+                font-size: 10px;
+            }
+
+            .official-header {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 5px;
+                /* text-align: center; */
+                border-bottom: 3px double black;
+                margin-bottom: 20px;
+            }
+
+            /* Force colors in print */
+            .path-highlight {
+                background-color: #22c55e !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .visited {
+                background-color: #3b82f6 !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+
+        .hidden-print-section {
+            display: none;
+        }
+
+        @media print {
+            .hidden-print-section {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body class="p-4">
+
+    <div class="max-w-7xl mx-auto space-y-4 main-container bg-white p-6 rounded-xl shadow-2xl no-print">
+        <div class="flex flex-wrap justify-between items-center border-b-2 border-slate-100 pb-4 gap-4">
+            <div class="flex justify-center items-center gap-3">
+                <img src="logo.png" alt="" class="w-14">
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 italic">AIR UNIVERSITY, Karachi</h1>
+                    <p class="text-[10px] font-bold text-slate-500">Instructor: Muhammad Hussain</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <select id="algo-select"
+                    class="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 font-bold outline-none">
+                    <option value="BFS" selected>BFS</option>
+                    <option value="DFS">DFS</option>
+                    <option value="UCS">UCS</option>
+                    <option value="DLS">DLS (Limit 2)</option>
+                    <option value="IDS">IDS</option>
+                </select>
+                <button onclick="solveStep()"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-blue-700">Next
+                    Step</button>
+                <button onclick="preparePrint(true)"
+                    class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs">Download Solution</button>
+                <button onclick="generateFullBooklet()"
+                    class="bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg">Download All
+                    Assignments</button>
+                <button onclick="location.reload()"
+                    class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs">Reset</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 relative">
+            <div class="lg:col-span-7 bg-slate-50 rounded-2xl canvas-area h-[450px] relative border-2 border-slate-100 overflow-hidden shadow-inner"
+                id="screen-canvas"></div>
+            <div class="lg:col-span-5 flex flex-col gap-4">
+                <div class="bg-slate-900 rounded-2xl p-4 text-white h-[300px] overflow-hidden flex flex-col shadow-xl">
+                    <h3 class="text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest">Execution Trace</h3>
+                    <div class="overflow-y-auto flex-grow font-mono text-[10px]">
+                        <table class="w-full text-left">
+                            <tbody id="trace-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="html-solution-card"
+                    class="bg-emerald-50 border-2 border-emerald-200 p-4 rounded-2xl hidden shadow-lg">
+                    <h3 class="text-emerald-800 font-black text-sm uppercase mb-2">Target Found</h3>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                            <p class="text-slate-500 font-bold text-[9px]">Final Path</p>
+                            <p id="html-path" class="font-bold text-emerald-700"></p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 font-bold text-[9px]">Total Cost</p>
+                            <p id="html-cost" class="font-bold text-blue-700 text-lg"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-area" class="hidden-print-section"></div>
+
+    <script>
+        const algorithms = ["BFS", "DFS", "UCS", "DLS", "IDS"];
+        const graph = {
+            'S': { 'A': 5, 'B': 2 }, 'A': { 'C': 3, 'D': 4 }, 'B': { 'E': 7, 'F': 1 },
+            'C': { 'G': 10 }, 'D': { 'G': 15 }, 'E': {}, 'F': { 'G': 3 }, 'G': {}
+        };
+        const positions = {
+            'S': [350, 40], 'A': [180, 140], 'B': [520, 140],
+            'C': [100, 260], 'D': [260, 260], 'E': [440, 260], 'F': [600, 260], 'G': [350, 420]
+        };
+
+        let frontier = [{ node: 'S', cost: 0, path: ['S'], depth: 0 }], visited = new Set(), stepCount = 0, history = [], isDone = false, currentLimit = 0;
+
+        function initCanvas(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<svg id="svg-${containerId}"><defs><marker id="arrow-${containerId}" viewBox="0 0 10 10" refX="25" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" /></marker></defs><g id="lines-${containerId}"></g></svg><div id="nodes-${containerId}"></div><div id="labels-${containerId}"></div>`;
+            Object.keys(positions).forEach(node => {
+                const [x, y] = positions[node];
+                document.getElementById(`nodes-${containerId}`).innerHTML += `<div id="node-${containerId}-${node}" class="node" style="left:${x - 22}px; top:${y - 22}px">${node}</div>`;
+                if (graph[node]) {
+                    Object.entries(graph[node]).forEach(([child, cost]) => {
+                        const [cx, cy] = positions[child];
+                        document.getElementById(`lines-${containerId}`).innerHTML += `<line id="line-${containerId}-${node}-${child}" x1="${x}" y1="${y}" x2="${cx}" y2="${cy}" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arrow-${containerId})" />`;
+                        document.getElementById(`labels-${containerId}`).innerHTML += `<div class="edge-label" style="left:${(x + cx) / 2}px; top:${(y + cy) / 2}px">${cost}</div>`;
+                    });
+                }
+            });
+        }
+
+        function solveStep(isSilent = false) {
+            if (isDone) return;
+            const algo = document.getElementById('algo-select').value;
+            if (frontier.length === 0) {
+                if (algo === "IDS" && currentLimit < 3) { currentLimit++; frontier = [{ node: 'S', cost: 0, path: ['S'], depth: 0 }]; return; }
+                return;
+            }
+            stepCount++;
+            let current;
+            if (algo === "BFS") current = frontier.shift();
+            else if (algo === "DFS" || algo === "DLS" || algo === "IDS") current = frontier.pop();
+            else if (algo === "UCS") { frontier.sort((a, b) => a.cost - b.cost); current = frontier.shift(); }
+
+            if (!isSilent) document.getElementById(`node-screen-canvas-${current.node}`).classList.add('active', 'visited');
+            visited.add(current.node);
+
+            if (current.node === 'G') {
+                isDone = true;
+                if (!isSilent) showHTMLSolution(current.path, current.cost);
+                history.push({ s: stepCount, n: current.node, f: "GOAL!", path: current.path });
+                return;
+            }
+
+            let limit = (algo === "DLS") ? 2 : (algo === "IDS" ? currentLimit : 99);
+            if (current.depth < limit) {
+                Object.entries(graph[current.node]).forEach(([child, cost]) => {
+                    frontier.push({ node: child, cost: current.cost + cost, path: [...current.path, child], depth: current.depth + 1 });
+                    if (!isSilent) document.getElementById(`line-screen-canvas-${current.node}-${child}`).setAttribute('stroke', '#3b82f6');
+                });
+            }
+            history.push({ s: stepCount, n: current.node, f: frontier.map(f => f.node).join(', ') });
+            if (!isSilent) updateLog();
+        }
+
+        function showHTMLSolution(path, cost) {
+            document.getElementById('html-solution-card').classList.remove('hidden');
+            document.getElementById('html-path').innerText = path.join(' → ');
+            document.getElementById('html-cost').innerText = cost;
+            path.forEach((n, i) => {
+                document.getElementById(`node-screen-canvas-${n}`).classList.add('path-highlight');
+                if (i > 0) document.getElementById(`line-screen-canvas-${path[i - 1]}-${n}`).setAttribute('stroke', '#22c55e');
+            });
+        }
+
+        function updateLog() {
+            document.getElementById('trace-body').innerHTML = history.map(h => `<tr class="border-b border-slate-800"><td>${h.s}</td><td class="text-yellow-400 font-bold">${h.n}</td><td>${h.f}</td></tr>`).join('');
+        }
+
+        function preparePrint(isSol) {
+            const algo = document.getElementById('algo-select').value;
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = `
+        <div class="official-header">
+            <h1 class="text-xl font-bold uppercase">Air University, Karachi</h1>
+            <p class="text-xs font-bold underline italic uppercase">${algo} ${isSol ? 'Solution (Trace)' : 'Quiz'}</p>
+        </div>
+        <div id="print-canvas" class="canvas-area mt-4"></div>
+        <table class="print-table mt-4">
+            <thead><tr><th>Step</th><th>Expanded Node</th><th>Frontier State</th><th>Depth</th></tr></thead>
+            <tbody id="p-body"></tbody>
+        </table>`;
+
+            initCanvas('print-canvas');
+            const pBody = document.getElementById('p-body');
+
+            if (isSol) {
+                // Reset state for clean simulation
+                isDone = false;
+                stepCount = 0;
+                history = [];
+                frontier = [{ node: 'S', cost: 0, path: ['S'], depth: 0 }];
+                let localVisited = new Set();
+
+                // Execute steps until done or frontier empty
+                while (!isDone && frontier.length > 0 && stepCount < 50) {
+                    let currentAlgo = document.getElementById('algo-select').value;
+                    // Hum solveStep ka logic yahan manually thora control kar rahe hain for print
+                    stepCount++;
+                    let current;
+                    if (currentAlgo === "BFS") current = frontier.shift();
+                    else if (currentAlgo === "DFS" || currentAlgo === "DLS" || currentAlgo === "IDS") current = frontier.pop();
+                    else if (currentAlgo === "UCS") { frontier.sort((a, b) => a.cost - b.cost); current = frontier.shift(); }
+
+                    // Highlight node as visited in print canvas
+                    const nodeEl = document.getElementById(`node-print-canvas-${current.node}`);
+                    if (nodeEl) nodeEl.classList.add('visited');
+                    localVisited.add(current.node);
+
+                    if (current.node === 'G') {
+                        isDone = true;
+                        // Highlight final path in Green
+                        current.path.forEach((n, i) => {
+                            const pNode = document.getElementById(`node-print-canvas-${n}`);
+                            if (pNode) {
+                                pNode.classList.remove('visited');
+                                pNode.classList.add('path-highlight');
+                            }
+                            if (i > 0) {
+                                const line = document.getElementById(`line-print-canvas-${current.path[i - 1]}-${n}`);
+                                if (line) line.setAttribute('stroke', '#22c55e');
+                            }
+                        });
+                        history.push({ s: stepCount, n: current.node, f: "GOAL FOUND!", d: current.depth });
+                    } else {
+                        let limit = (currentAlgo === "DLS") ? 2 : (currentAlgo === "IDS" ? currentLimit : 99);
+                        if (current.depth < limit) {
+                            Object.entries(graph[current.node]).forEach(([child, cost]) => {
+                                frontier.push({ node: child, cost: current.cost + cost, path: [...current.path, child], depth: current.depth + 1 });
+                                const line = document.getElementById(`line-print-canvas-${current.node}-${child}`);
+                                if (line) line.setAttribute('stroke', '#3b82f6'); // Highlight edge being explored
+                            });
+                        }
+                        history.push({ s: stepCount, n: current.node, f: frontier.map(f => f.node).join(', ') || "Empty", d: current.depth });
+                    }
+                }
+
+                // Populate Table
+                history.forEach(h => {
+                    pBody.innerHTML += `<tr><td>${h.s}</td><td class="font-bold">${h.n}</td><td>${h.f}</td><td>${h.d}</td></tr>`;
+                });
+
+                if (!isDone && algo === "DLS") {
+                    pBody.innerHTML += `<tr><td colspan="4" class="text-center italic text-red-600 font-bold">Search stopped: Depth limit reached before finding Goal.</td></tr>`;
+                }
+            } else {
+                for (let i = 1; i <= 12; i++) pBody.innerHTML += `<tr><td height="30">${i}</td><td></td><td></td><td></td></tr>`;
+            }
+
+            setTimeout(() => window.print(), 300);
+        }
+
+        function generateFullBooklet() {
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = "";
+            algorithms.forEach((algo, index) => {
+                const pageId = `page-${index}`;
+                printArea.innerHTML += `
+                    <div class="page-break">
+                        <div class="official-header">
+                            <img src="logo.png" alt="Air University Logo" class="w-16">
+                            <div>
+                                <h1 class="text-xl font-bold uppercase">Air University, Karachi</h1>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-xs font-bold">Question: Solve the following tree using ${algo} ${algo === "DLS" ? "(limit= 2)" : ""} starting from S to reach G. Fill the trace table below. Also provide the final solution path, time and space complexity.</p>
+                            <div id="${pageId}" class="canvas-area mt-4"></div>
+                        </div>
+                        
+                    </div>`;
+                setTimeout(() => initCanvas(pageId), 10);
+            });
+            setTimeout(() => window.print(), 600);
+        }
+
+        initCanvas('screen-canvas');
+        document.getElementById('algo-select').onchange = () => {
+            isDone = false; stepCount = 0; currentLimit = 0;
+            frontier = [{ node: 'S', cost: 0, path: ['S'], depth: 0 }];
+            history = [];
+            document.getElementById('html-solution-card').classList.add('hidden');
+            initCanvas('screen-canvas');
+        };
+    </script>
+</body>
+
+</html>

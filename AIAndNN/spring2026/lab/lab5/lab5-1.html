@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PCA Journey: From Fruit to Data</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #0f172a;
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .step-card {
+            display: none;
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .step-active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .shadow-box {
+            filter: brightness(0) blur(1px);
+            opacity: 0.4;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-10">
+
+    <div class="max-w-4xl mx-auto relative">
+        <div class="absolute top-0 right-0 z-10">
+            <button id="languageToggle" type="button" onclick="toggleLanguage()" class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200 shadow-lg transition hover:bg-slate-800">
+                <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Lang</span>
+                <span id="languageToggleLabel">English</span>
+            </button>
+        </div>
+        <div class="w-full bg-slate-800 h-2 rounded-full mb-10 overflow-hidden">
+            <div id="progress" class="bg-emerald-500 h-full transition-all duration-500" style="width: 25%"></div>
+        </div>
+
+        <div id="step1" class="step-card step-active bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+            <span id="step1Badge" class="bg-emerald-500 text-xs font-black px-3 py-1 rounded-full text-black">STEP 01: REAL WORLD</span>
+            <h2 id="step1Title" class="text-3xl font-black mt-4 mb-6">Sabzi aur Phal ki Misal 🍎</h2>
+            <p id="step1Intro" class="text-slate-400 text-lg mb-8 italic">"Bachon, socho ek Seb (Apple) hai. Uska rang hai, wazan hai,
+                methas hai, aur size hai (4 Features)."</p>
+
+            <div class="flex justify-center gap-10 text-6xl mb-10">
+                <div class="flex flex-col items-center">
+                    <span class="hover:scale-110 transition cursor-help" title="Weight">⚖️</span>
+                    <span id="weightLabel" class="text-xs mt-2 text-slate-500">Wazan</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="hover:scale-110 transition cursor-help" title="Size">📏</span>
+                    <span id="sizeLabel" class="text-xs mt-2 text-slate-500">Size</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="hover:scale-110 transition cursor-help" title="Color">🎨</span>
+                    <span id="colorLabel" class="text-xs mt-2 text-slate-500">Rang</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="hover:scale-110 transition cursor-help" title="Sugar">🍬</span>
+                    <span id="sweetnessLabel" class="text-xs mt-2 text-slate-500">Methas</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/50 p-6 rounded-2xl border-l-4 border-emerald-500">
+                <p id="conceptLabel" class="text-emerald-400 font-bold">Concept:</p>
+                <p id="step1Concept" class="text-sm">Kya humein Seb pehchanne ke liye in 4 cheezon ki zaroorat hai? Nahi! Sirf 2-3
+                    cheezein kafi hain. Yehi <b>Dimensionality Reduction</b> hai.</p>
+            </div>
+
+            <button onclick="nextStep(2)"
+                id="step1Button" class="mt-8 w-full bg-emerald-500 text-black font-black py-4 rounded-xl hover:bg-emerald-400 transition">Agli
+                Baat Samjhein →</button>
+        </div>
+
+        <div id="step2" class="step-card bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+            <span id="step2Badge" class="bg-amber-500 text-xs font-black px-3 py-1 rounded-full text-black">STEP 02: THE MAGIC
+                SHADOW</span>
+            <h2 id="step2Title" class="text-3xl font-black mt-4 mb-6">Eigenvalues & Vectors ka "Saya" 🔦</h2>
+
+            <div class="flex justify-around items-center h-40 bg-black/30 rounded-2xl mb-8">
+                <div class="text-6xl animate-bounce">🍎</div>
+                <div class="text-4xl text-slate-600">➔</div>
+                <div class="text-6xl shadow-box">🍎</div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-slate-900 p-4 rounded-xl">
+                    <h4 id="step2VectorTitle" class="text-amber-500 font-bold mb-2">Eigenvector (The Torch)</h4>
+                    <p id="step2VectorText" class="text-xs text-slate-400">Torch ko kis rukh se pakrein ke Seb ka saya bilkul gol aur saaf
+                        nazar aaye? Wo <b>Rukh (Direction)</b> Eigenvector hai.</p>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl">
+                    <h4 id="step2ValueTitle" class="text-emerald-500 font-bold mb-2">Eigenvalue (The Brightness)</h4>
+                    <p id="step2ValueText" class="text-xs text-slate-400">Saye ka <b>Size</b> kitna bada hai? Jitna bada saya, utni zyada
+                        information. Bari Eigenvalue ka matlab "Saaf Information".</p>
+                </div>
+            </div>
+
+            <button onclick="nextStep(3)"
+                id="step2Button" class="mt-8 w-full bg-amber-500 text-black font-black py-4 rounded-xl hover:bg-amber-400 transition">Chalein
+                ab Data Table dekhte hain →</button>
+        </div>
+
+        <div id="step3" class="step-card bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+            <span id="step3Badge" class="bg-blue-500 text-xs font-black px-3 py-1 rounded-full text-black">STEP 03: THE ACTUAL
+                DATA</span>
+            <h2 id="step3Title" class="text-3xl font-black mt-4 mb-6">Ab Iris Table ko Dekhein 📊</h2>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-700 mb-8">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900">
+                        <tr>
+                            <th id="sampleHeader" class="p-3">Sample</th>
+                            <th id="sepalLengthHeader" class="p-3 text-blue-400">Sepal Length</th>
+                            <th id="sepalWidthHeader" class="p-3 text-blue-400">Sepal Width</th>
+                            <th id="petalLengthHeader" class="p-3 text-blue-400">Petal Length</th>
+                            <th id="petalWidthHeader" class="p-3 text-blue-400">Petal Width</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-500">
+                        <tr class="border-t border-slate-700">
+                            <td class="p-3">145</td>
+                            <td class="p-3">6.7</td>
+                            <td class="p-3">3.0</td>
+                            <td class="p-3">5.2</td>
+                            <td class="p-3">2.3</td>
+                        </tr>
+                        <tr class="border-t border-slate-700">
+                            <td class="p-3">146</td>
+                            <td class="p-3">6.3</td>
+                            <td class="p-3">2.5</td>
+                            <td class="p-3">5.0</td>
+                            <td class="p-3">1.9</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-6 bg-blue-900/30 rounded-2xl border-l-4 border-blue-500">
+                <p id="step3Note" class="text-blue-300 font-bold mb-2 text-sm italic">"Bachon, ye 4 columns wahi 'Wazan, Size, Rang'
+                    hain. PCA inhein squeeze kar ke 2 naye columns (PC1 aur PC2) banayega."</p>
+            </div>
+
+            <button onclick="restart()"
+                id="restartButton" class="mt-8 w-full border-2 border-slate-600 text-slate-400 font-bold py-3 rounded-xl hover:bg-slate-700 transition">Shuru
+                se Samjhein 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            rom: {
+                languageToggleLabel: 'English',
+                step1Badge: 'STEP 01: REAL WORLD',
+                step1Title: 'Sabzi aur Phal ki Misal 🍎',
+                step1Intro: '"Bachon, socho ek Seb (Apple) hai. Uska rang hai, wazan hai, methas hai, aur size hai (4 Features)."',
+                weightLabel: 'Wazan',
+                sizeLabel: 'Size',
+                colorLabel: 'Rang',
+                sweetnessLabel: 'Methas',
+                conceptLabel: 'Concept:',
+                step1Concept: 'Kya humein Seb pehchanne ke liye in 4 cheezon ki zaroorat hai? Nahi! Sirf 2-3 cheezein kafi hain. Yehi <b>Dimensionality Reduction</b> hai.',
+                step1Button: 'Agli Baat Samjhein →',
+                step2Badge: 'STEP 02: THE MAGIC SHADOW',
+                step2Title: 'Eigenvalues & Vectors ka "Saya" 🔦',
+                step2VectorTitle: 'Eigenvector (The Torch)',
+                step2VectorText: 'Torch ko kis rukh se pakrein ke Seb ka saya bilkul gol aur saaf nazar aaye? Wo <b>Rukh (Direction)</b> Eigenvector hai.',
+                step2ValueTitle: 'Eigenvalue (The Brightness)',
+                step2ValueText: 'Saye ka <b>Size</b> kitna bada hai? Jitna bada saya, utni zyada information. Bari Eigenvalue ka matlab "Saaf Information".',
+                step2Button: 'Chalein ab Data Table dekhte hain →',
+                step3Badge: 'STEP 03: THE ACTUAL DATA',
+                step3Title: 'Ab Iris Table ko Dekhein 📊',
+                sampleHeader: 'Sample',
+                sepalLengthHeader: 'Sepal Length',
+                sepalWidthHeader: 'Sepal Width',
+                petalLengthHeader: 'Petal Length',
+                petalWidthHeader: 'Petal Width',
+                step3Note: '"Bachon, ye 4 columns wahi \'Wazan, Size, Rang\' hain. PCA inhein squeeze kar ke 2 naye columns (PC1 aur PC2) banayega."',
+                restartButton: 'Shuru se Samjhein 🔄'
+            },
+            en: {
+                languageToggleLabel: 'Roman',
+                step1Badge: 'STEP 01: REAL WORLD',
+                step1Title: 'Fruit Example 🍎',
+                step1Intro: '"Kids, imagine an apple. It has color, weight, sweetness, and size (4 features)."',
+                weightLabel: 'Weight',
+                sizeLabel: 'Size',
+                colorLabel: 'Color',
+                sweetnessLabel: 'Sweetness',
+                conceptLabel: 'Concept:',
+                step1Concept: 'Do we really need all 4 things to recognize an apple? No! Only 2-3 are enough. That is <b>Dimensionality Reduction</b>.',
+                step1Button: 'Let’s Understand the Next Part →',
+                step2Badge: 'STEP 02: THE MAGIC SHADOW',
+                step2Title: 'The "Shadow" of Eigenvalues & Vectors 🔦',
+                step2VectorTitle: 'Eigenvector (The Torch)',
+                step2VectorText: 'From which direction should we hold the torch so the apple’s shadow looks perfectly round and clear? That <b>Direction</b> is the Eigenvector.',
+                step2ValueTitle: 'Eigenvalue (The Brightness)',
+                step2ValueText: 'How big is the shadow’s <b>Size</b>? The bigger the shadow, the more information it contains. A larger Eigenvalue means "clearer information".',
+                step2Button: 'Now Let’s Look at the Data Table →',
+                step3Badge: 'STEP 03: THE ACTUAL DATA',
+                step3Title: 'Now Look at the Iris Table 📊',
+                sampleHeader: 'Sample',
+                sepalLengthHeader: 'Sepal Length',
+                sepalWidthHeader: 'Sepal Width',
+                petalLengthHeader: 'Petal Length',
+                petalWidthHeader: 'Petal Width',
+                step3Note: '"Kids, these 4 columns are the same as \"Weight, Size, Color\". PCA will squeeze them into 2 new columns (PC1 and PC2)."',
+                restartButton: 'Explain Again from the Start 🔄'
+            }
+        };
+
+        let currentLanguage = 'rom';
+
+        function applyLanguage(language) {
+            currentLanguage = language;
+            const strings = translations[language];
+
+            document.getElementById('languageToggleLabel').innerHTML = strings.languageToggleLabel;
+            document.getElementById('step1Badge').innerHTML = strings.step1Badge;
+            document.getElementById('step1Title').innerHTML = strings.step1Title;
+            document.getElementById('step1Intro').innerHTML = strings.step1Intro;
+            document.getElementById('weightLabel').innerHTML = strings.weightLabel;
+            document.getElementById('sizeLabel').innerHTML = strings.sizeLabel;
+            document.getElementById('colorLabel').innerHTML = strings.colorLabel;
+            document.getElementById('sweetnessLabel').innerHTML = strings.sweetnessLabel;
+            document.getElementById('conceptLabel').innerHTML = strings.conceptLabel;
+            document.getElementById('step1Concept').innerHTML = strings.step1Concept;
+            document.getElementById('step1Button').innerHTML = strings.step1Button;
+            document.getElementById('step2Badge').innerHTML = strings.step2Badge;
+            document.getElementById('step2Title').innerHTML = strings.step2Title;
+            document.getElementById('step2VectorTitle').innerHTML = strings.step2VectorTitle;
+            document.getElementById('step2VectorText').innerHTML = strings.step2VectorText;
+            document.getElementById('step2ValueTitle').innerHTML = strings.step2ValueTitle;
+            document.getElementById('step2ValueText').innerHTML = strings.step2ValueText;
+            document.getElementById('step2Button').innerHTML = strings.step2Button;
+            document.getElementById('step3Badge').innerHTML = strings.step3Badge;
+            document.getElementById('step3Title').innerHTML = strings.step3Title;
+            document.getElementById('sampleHeader').innerHTML = strings.sampleHeader;
+            document.getElementById('sepalLengthHeader').innerHTML = strings.sepalLengthHeader;
+            document.getElementById('sepalWidthHeader').innerHTML = strings.sepalWidthHeader;
+            document.getElementById('petalLengthHeader').innerHTML = strings.petalLengthHeader;
+            document.getElementById('petalWidthHeader').innerHTML = strings.petalWidthHeader;
+            document.getElementById('step3Note').innerHTML = strings.step3Note;
+            document.getElementById('restartButton').innerHTML = strings.restartButton;
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLanguage === 'rom' ? 'en' : 'rom');
+        }
+
+        function nextStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step-card').forEach(card => card.classList.remove('step-active'));
+            // Show target step
+            document.getElementById('step' + step).classList.add('step-active');
+            // Update progress bar
+            const progress = (step / 3) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function restart() {
+            nextStep(1);
+            document.getElementById('progress').style.width = '25%';
+        }
+
+        applyLanguage('rom');
+    </script>
+</body>
+
+</html>

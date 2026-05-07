@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Midterm: DFS Ultra-Lab (15 Scenarios)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #05070a;
+            color: white;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 28px;
+        }
+
+        .node {
+            width: 34px;
+            height: 34px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: absolute;
+            z-index: 20;
+            font-size: 10px;
+            transition: all 0.3s;
+        }
+
+        .node.active {
+            background: #f59e0b;
+            border-color: #fbbf24;
+            transform: scale(1.2);
+            box-shadow: 0 0 15px #f59e0b;
+        }
+
+        .node.visited {
+            background: #3b82f6;
+            border-color: #60a5fa;
+        }
+
+        .node.path-final {
+            background: #10b981 !important;
+            border-color: #34d399 !important;
+            box-shadow: 0 0 20px #10b981;
+        }
+
+        .graph-frame svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .graph-frame line {
+            stroke: #1e293b;
+            stroke-width: 2;
+            opacity: 0.4;
+        }
+
+        .graph-frame line.explored {
+            stroke: #3b82f6;
+            opacity: 0.8;
+        }
+
+        .graph-frame line.final-path {
+            stroke: #10b981;
+            stroke-width: 4;
+            stroke-dasharray: 5;
+            animation: dash 1s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -10;
+            }
+        }
+
+        .trace-table th {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #64748b;
+            padding: 10px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .trace-table td {
+            font-size: 10px;
+            padding: 8px;
+            border-bottom: 1px solid #0f172a;
+            font-family: monospace;
+        }
+
+        .metric-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .download-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(30, 41, 59, 0.8);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+
+        .download-btn:hover {
+            background: rgba(59, 130, 246, 0.35);
+            border-color: rgba(96, 165, 250, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .download-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: #e2e8f0;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-10">
+
+    <div
+        class="max-w-7xl mx-auto mb-16 border-b border-white/5 pb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <span class="text-blue-500 font-bold tracking-[0.2em] text-[10px] uppercase">Department of Computer
+                Science</span>
+            <h1
+                class="text-5xl font-black italic bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
+                DFS ANALYTICA.</h1>
+            <p class="text-slate-500 mt-2">15 Complex Graph Scenarios for AI Midterm Prep • Air University</p>
+        </div>
+        <div class="flex gap-2">
+            <div class="metric-chip">Mode: Manual Step</div>
+            <div class="metric-chip">Alg: DFS (LIFO)</div>
+        </div>
+    </div>
+
+    <div id="master-container" class="max-w-7xl mx-auto space-y-20"></div>
+
+    <script>
+        const scenarios = [
+            { id: 1, title: "01. Binary Tree", nodes: { 'S': [300, 40], 'A': [150, 120], 'B': [450, 120], 'C': [80, 220], 'D': [220, 220], 'G': [450, 220] }, adj: { 'S': ['B', 'A'], 'A': ['D', 'C'], 'B': ['G'], 'C': [], 'D': [], 'G': [] } },
+            { id: 2, title: "02. The Spiral", nodes: { 'S': [50, 50], 'A': [250, 50], 'B': [450, 50], 'C': [450, 180], 'D': [450, 320], 'E': [250, 320], 'F': [250, 180], 'G': [100, 180] }, adj: { 'S': ['A'], 'A': ['B'], 'B': ['C'], 'C': ['D'], 'D': ['E'], 'E': ['F'], 'F': ['G'], 'G': [] } },
+            { id: 3, title: "03. Diamond Mesh", nodes: { 'S': [50, 180], 'A': [200, 80], 'B': [200, 280], 'C': [400, 80], 'D': [400, 280], 'E': [550, 180], 'G': [700, 180] }, adj: { 'S': ['B', 'A'], 'A': ['C'], 'B': ['D'], 'C': ['E'], 'D': ['E'], 'E': ['G'], 'G': [] } },
+            { id: 4, title: "04. Dead-End Maze", nodes: { 'S': [350, 40], 'A': [200, 100], 'B': [500, 100], 'C': [100, 200], 'D': [300, 200], 'E': [100, 320], 'F': [600, 200], 'G': [350, 320] }, adj: { 'S': ['B', 'A'], 'A': ['D', 'C'], 'B': ['F'], 'C': ['E'], 'D': ['G'], 'E': [], 'F': [], 'G': [] } },
+            { id: 5, title: "05. Dense Grid", nodes: { 'S': [50, 50], 'A': [200, 50], 'B': [50, 180], 'C': [200, 180], 'D': [350, 50], 'E': [350, 180], 'F': [500, 50], 'G': [500, 180] }, adj: { 'S': ['B', 'A'], 'A': ['C', 'D'], 'B': ['C'], 'C': ['E'], 'D': ['F'], 'E': ['G'], 'F': ['G'], 'G': [] } },
+            // Complex Scenarios 06-10
+            { id: 6, title: "06. Bridge to Infinity", nodes: { 'S': [50, 200], 'A': [150, 100], 'B': [150, 300], 'C': [300, 200], 'D': [450, 100], 'E': [450, 300], 'F': [600, 200], 'G': [750, 200] }, adj: { 'S': ['B', 'A'], 'A': ['C'], 'B': ['C'], 'C': ['E', 'D'], 'D': ['F'], 'E': ['F'], 'F': ['G'], 'G': [] } },
+            { id: 7, title: "07. The Star Trap", nodes: { 'S': [350, 200], 'A': [350, 50], 'B': [550, 150], 'C': [500, 350], 'D': [200, 350], 'E': [150, 150], 'G': [700, 200] }, adj: { 'S': ['A', 'B', 'C', 'D', 'E'], 'A': ['B'], 'B': ['G'], 'C': ['G'], 'D': ['E'], 'E': ['A'] } },
+            { id: 8, title: "08. Double Diamond", nodes: { 'S': [50, 200], 'A': [200, 100], 'B': [200, 300], 'C': [350, 200], 'D': [500, 100], 'E': [500, 300], 'G': [650, 200] }, adj: { 'S': ['A', 'B'], 'A': ['C'], 'B': ['C'], 'C': ['D', 'E'], 'D': ['G'], 'E': ['G'] } },
+            { id: 9, title: "09. Cyclic Ladder", nodes: { 'S': [50, 100], 'A': [250, 100], 'B': [450, 100], 'C': [650, 100], 'D': [50, 250], 'E': [250, 250], 'F': [450, 250], 'G': [650, 250] }, adj: { 'S': ['A', 'D'], 'A': ['B', 'E'], 'B': ['C', 'F'], 'C': ['G'], 'D': ['E'], 'E': ['F'], 'F': ['G'] } },
+            { id: 10, title: "10. Adversarial Mesh", nodes: { 'S': [400, 50], 'A': [200, 150], 'B': [600, 150], 'C': [100, 250], 'D': [300, 250], 'E': [500, 250], 'F': [700, 250], 'G': [400, 350] }, adj: { 'S': ['A', 'B'], 'A': ['C', 'D'], 'B': ['E', 'F'], 'C': ['G'], 'D': ['G'], 'E': ['G'], 'F': ['G'] } },
+            // Maze-like and adversarial additions 11-15
+            { id: 11, title: "11. Triple Fork Arena", nodes: { 'S': [80, 200], 'A': [220, 80], 'B': [220, 200], 'C': [220, 320], 'D': [390, 80], 'E': [390, 200], 'F': [390, 320], 'H': [560, 80], 'I': [560, 200], 'J': [560, 320], 'G': [730, 200] }, adj: { 'S': ['C', 'B', 'A'], 'A': ['D', 'E'], 'B': ['E', 'F'], 'C': ['F'], 'D': ['H'], 'E': ['I', 'H'], 'F': ['J'], 'H': ['G'], 'I': ['G'], 'J': ['G'], 'G': [] } },
+            { id: 12, title: "12. Layered Pressure Net", nodes: { 'S': [80, 180], 'A': [220, 90], 'B': [220, 180], 'C': [220, 270], 'D': [390, 90], 'E': [390, 180], 'F': [390, 270], 'K': [560, 90], 'L': [560, 180], 'M': [560, 270], 'G': [730, 180] }, adj: { 'S': ['A', 'B', 'C'], 'A': ['D', 'E'], 'B': ['E', 'F'], 'C': ['F'], 'D': ['K', 'L'], 'E': ['L', 'M'], 'F': ['M'], 'K': ['G'], 'L': ['G'], 'M': ['G'], 'G': [] } },
+            { id: 13, title: "13. Backtrack Storm", nodes: { 'S': [90, 200], 'A': [250, 80], 'B': [250, 200], 'C': [250, 320], 'D': [430, 80], 'E': [430, 200], 'F': [430, 320], 'G': [670, 200], 'X': [560, 80], 'Y': [560, 320] }, adj: { 'S': ['C', 'B', 'A'], 'A': ['D'], 'B': ['E', 'A'], 'C': ['F', 'B'], 'D': ['X'], 'E': ['G', 'D'], 'F': ['Y', 'E'], 'X': ['E'], 'Y': ['F'], 'G': [] } },
+            { id: 14, title: "14. Crossfire Lattice", nodes: { 'S': [70, 200], 'A': [210, 70], 'B': [210, 200], 'C': [210, 330], 'D': [380, 70], 'E': [380, 200], 'F': [380, 330], 'H': [550, 70], 'I': [550, 200], 'J': [550, 330], 'G': [720, 200] }, adj: { 'S': ['B', 'A', 'C'], 'A': ['D', 'E'], 'B': ['E', 'F', 'D'], 'C': ['F', 'E'], 'D': ['H', 'I'], 'E': ['I', 'J'], 'F': ['J'], 'H': ['G'], 'I': ['G'], 'J': ['G'], 'G': [] } },
+            { id: 15, title: "15. Final Adversarial Gauntlet", nodes: { 'S': [80, 180], 'A': [220, 80], 'B': [220, 180], 'C': [220, 280], 'D': [390, 80], 'E': [390, 180], 'F': [390, 280], 'H': [560, 80], 'I': [560, 180], 'J': [560, 280], 'G': [740, 180] }, adj: { 'S': ['A', 'B', 'C'], 'A': ['D', 'E'], 'B': ['E', 'F'], 'C': ['F', 'B'], 'D': ['H', 'I'], 'E': ['I', 'J'], 'F': ['J', 'E'], 'H': ['G'], 'I': ['G'], 'J': ['I'], 'G': [] } }
+        ];
+
+        let state = {};
+
+        function render() {
+            const container = document.getElementById('master-container');
+            scenarios.forEach(s => {
+                state[s.id] = { stack: [{ node: 'S', path: ['S'] }], visited: new Set(), step: 0, done: false };
+                const v = Object.keys(s.nodes).length;
+                const e = Object.values(s.adj).flat().length;
+                const b = Math.max(...Object.values(s.adj).map(children => children.length), 0);
+                const m = v - 1;
+
+                container.innerHTML += `
+                    <div class="glass-card p-6 md:p-10">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                            <div class="lg:col-span-8">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h3 class="text-2xl font-bold">${s.title}</h3>
+                                        <div class="flex gap-4 mt-2">
+                                            <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">AI Time: O(b^m) ≈ O(${b}^${m})</span>
+                                            <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">AI Space: O(bm) ≈ O(${b * m})</span>
+                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Graph Size: V=${v}, E=${e}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="downloadTree(${s.id})" class="download-btn" title="Download Tree Image" aria-label="Download Tree Image">
+                                            <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 3V14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                <path d="M8 10L12 14L16 10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                <path d="M4 17V19C4 20.1 4.9 21 6 21H18C19.1 21 20 20.1 20 19V17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            </svg>
+                                        </button>
+                                        <button onclick="step(${s.id})" id="btn-${s.id}" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-xl active:scale-95 transition-all text-sm">Next Step →</button>
+                                    </div>
+                                </div>
+                                <div class="graph-frame bg-slate-950/60 rounded-[30px] h-[400px] relative border border-white/5 overflow-hidden" id="canvas-${s.id}">
+                                    <svg id="svg-${s.id}"></svg>
+                                    <div id="nodes-${s.id}"></div>
+                                </div>
+                                <div id="footer-${s.id}" class="mt-6 p-4 bg-white/5 rounded-2xl hidden border border-white/10">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Final Result Path</p>
+                                    <p id="path-display-${s.id}" class="text-sm font-mono text-emerald-400"></p>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-4 flex flex-col">
+                                <p class="text-[10px] text-slate-500 font-bold uppercase mb-3 tracking-widest text-center">Execution Trace</p>
+                                <div class="bg-black/40 rounded-3xl border border-white/5 flex-grow overflow-hidden flex flex-col h-[450px]">
+                                    <div class="overflow-y-auto h-full scrollbar-hide">
+                                        <table class="w-full text-left trace-table">
+                                            <thead class="sticky top-0 bg-[#0f172a] z-10">
+                                                <tr><th>#</th><th>Exp</th><th>Stack</th><th>Action</th></tr>
+                                            </thead>
+                                            <tbody id="table-${s.id}"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            scenarios.forEach(s => {
+                const svg = document.getElementById(`svg-${s.id}`);
+                const nodesDiv = document.getElementById(`nodes-${s.id}`);
+                Object.entries(s.adj).forEach(([p, kids]) => {
+                    kids.forEach(k => {
+                        const [x1, y1] = s.nodes[p]; const [x2, y2] = s.nodes[k];
+                        svg.innerHTML += `<line id="line-${s.id}-${p}-${k}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+                    });
+                });
+                Object.entries(s.nodes).forEach(([l, pos]) => {
+                    nodesDiv.innerHTML += `<div id="node-${s.id}-${l}" class="node" style="left:${pos[0] - 17}px; top:${pos[1] - 17}px">${l}</div>`;
+                });
+            });
+        }
+
+        function step(id) {
+            const s = state[id]; const data = scenarios.find(x => x.id === id);
+            if (s.done || s.stack.length === 0) return;
+
+            s.step++;
+            const { node, path } = s.stack.pop();
+            const table = document.getElementById(`table-${id}`);
+
+            if (s.visited.has(node)) {
+                table.innerHTML += `<tr><td>${s.step}</td><td class="text-slate-600">${node}</td><td>[${s.stack.map(i => i.node)}]</td><td class="text-slate-600 italic">Skip</td></tr>`;
+                return step(id);
+            }
+
+            s.visited.add(node);
+            const nodeEl = document.getElementById(`node-${id}-${node}`);
+            nodeEl.classList.add('active');
+
+            if (node === 'G') {
+                s.done = true;
+                finalize(id, path);
+                table.innerHTML += `<tr class="bg-emerald-500/20"><td>${s.step}</td><td class="text-emerald-400 font-bold">${node}</td><td>[]</td><td class="text-emerald-400 font-bold italic">GOAL!</td></tr>`;
+            } else {
+                const neighbors = data.adj[node];
+                neighbors.forEach(n => {
+                    if (!s.visited.has(n)) {
+                        s.stack.push({ node: n, path: [...path, n] });
+                        document.getElementById(`line-${id}-${node}-${n}`).classList.add('explored');
+                    }
+                });
+                const stackStr = s.stack.length > 0 ? s.stack.map(i => i.node).join(',') : 'Ø';
+                table.innerHTML += `<tr><td>${s.step}</td><td class="text-blue-400 font-bold">${node}</td><td>[${stackStr}]</td><td>Exp</td></tr>`;
+            }
+
+            table.closest('.overflow-y-auto').scrollTop = table.closest('.overflow-y-auto').scrollHeight;
+            setTimeout(() => { if (!s.done) nodeEl.classList.replace('active', 'visited'); }, 400);
+        }
+
+        function finalize(id, path) {
+            document.getElementById(`footer-${id}`).classList.remove('hidden');
+            document.getElementById(`path-display-${id}`).innerText = path.join(' → ');
+            path.forEach((n, i) => {
+                document.getElementById(`node-${id}-${n}`).classList.add('path-final');
+                if (i > 0) document.getElementById(`line-${id}-${path[i - 1]}-${n}`).classList.add('final-path');
+            });
+            const btn = document.getElementById(`btn-${id}`);
+            btn.innerText = "SUCCESS"; btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+        }
+
+        function downloadTree(id) {
+            const scenario = scenarios.find(x => x.id === id);
+            const canvasContainer = document.getElementById(`canvas-${id}`);
+            if (!canvasContainer || !scenario) return;
+
+            html2canvas(canvasContainer, {
+                backgroundColor: '#f8fafc',
+                scale: 2,
+                useCORS: true,
+                onclone: (doc) => {
+                    const clonedCanvas = doc.getElementById(`canvas-${id}`);
+                    if (!clonedCanvas) return;
+
+                    clonedCanvas.style.background = '#f8fafc';
+                    clonedCanvas.style.border = '1px solid #cbd5e1';
+
+                    const lines = clonedCanvas.querySelectorAll('line');
+                    lines.forEach((line) => {
+                        line.style.stroke = '#94a3b8';
+                        line.style.opacity = '0.85';
+                    });
+
+                    clonedCanvas.querySelectorAll('line.explored').forEach((line) => {
+                        line.style.stroke = '#2563eb';
+                        line.style.opacity = '1';
+                    });
+
+                    clonedCanvas.querySelectorAll('line.final-path').forEach((line) => {
+                        line.style.stroke = '#16a34a';
+                        line.style.opacity = '1';
+                    });
+
+                    clonedCanvas.querySelectorAll('.node').forEach((node) => {
+                        node.style.background = '#ffffff';
+                        node.style.borderColor = '#0f172a';
+                        node.style.color = '#0f172a';
+                        node.style.boxShadow = 'none';
+                    });
+
+                    clonedCanvas.querySelectorAll('.node.visited').forEach((node) => {
+                        node.style.background = '#dbeafe';
+                        node.style.borderColor = '#2563eb';
+                    });
+
+                    clonedCanvas.querySelectorAll('.node.active').forEach((node) => {
+                        node.style.background = '#fde68a';
+                        node.style.borderColor = '#d97706';
+                    });
+
+                    clonedCanvas.querySelectorAll('.node.path-final').forEach((node) => {
+                        node.style.background = '#86efac';
+                        node.style.borderColor = '#15803d';
+                    });
+                }
+            }).then((canvas) => {
+                const link = document.createElement('a');
+                const safeTitle = scenario.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                link.download = `${safeTitle}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        window.onload = render;
+    </script>
+</body>
+
+</html>

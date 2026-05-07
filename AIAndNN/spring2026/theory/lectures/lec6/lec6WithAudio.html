@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Presentation | ML Lecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617;
+            color: white;
+            overflow: hidden;
+        }
+
+        .slide {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: fadeIn 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .accent-text {
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            transition: all 0.3s;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="start-screen" class="flex flex-col items-center justify-center h-screen text-center">
+        <h1 class="text-6xl font-black mb-8 accent-text">Machine Learning Masterclass</h1>
+        <p class="text-slate-400 mb-10 text-xl">Taiyar hain? Click karein presentation aur audio shuru karne ke liye.
+        </p>
+        <button onclick="startPresentation()"
+            class="btn-start px-10 py-4 rounded-full text-xl font-bold uppercase tracking-widest">
+            Start Lecture
+        </button>
+    </div>
+
+    <div class="slide flex-col p-10 text-center" id="slide-1">
+        <div class="max-w-4xl">
+            <h2 class="text-2xl text-sky-400 font-bold mb-4 uppercase">Part 01: Introduction</h2>
+            <h1 class="text-6xl font-black mb-8 leading-tight">What is <span class="accent-text">Machine
+                    Learning?</span></h1>
+            <p class="text-2xl text-slate-300 leading-relaxed">Computer ko bina coding ke seekhne ki taqat dena hi
+                Machine Learning hai. Hum machine ko examples dete hain aur wo khud patterns dhoondti hai.</p>
+        </div>
+    </div>
+
+    <div class="slide p-10" id="slide-2">
+        <div class="grid grid-cols-2 gap-10 max-w-6xl w-full">
+            <div class="bg-slate-900/50 p-8 rounded-3xl border border-slate-700">
+                <h3 class="text-red-400 text-xl font-bold mb-4">Traditional</h3>
+                <p class="text-4xl font-bold mb-6 italic">Data + Rules = Answers</p>
+                <p class="text-slate-400">Insan rules likhta hai.</p>
+            </div>
+            <div class="bg-indigo-500/10 p-8 rounded-3xl border border-indigo-500/30">
+                <h3 class="text-indigo-400 text-xl font-bold mb-4">Machine Learning</h3>
+                <p class="text-4xl font-bold mb-6 italic">Data + Answers = Rules</p>
+                <p class="text-slate-400">Machine khud logic banati hai.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide flex-col p-10" id="slide-3">
+        <h2 class="text-4xl font-black mb-12 accent-text">3 Types of Learning</h2>
+        <div class="flex gap-6 max-w-6xl">
+            <div class="bg-white/5 p-6 rounded-2xl border border-white/10 text-center flex-1">
+                <div class="text-4xl mb-4">👨‍🏫</div>
+                <h4 class="font-bold text-xl mb-2">Supervised</h4>
+                <p class="text-sm text-slate-400 text-balance">Learning with a teacher (Labeled Data).</p>
+            </div>
+            <div class="bg-white/5 p-6 rounded-2xl border border-white/10 text-center flex-1">
+                <div class="text-4xl mb-4">🕵️</div>
+                <h4 class="font-bold text-xl mb-2">Unsupervised</h4>
+                <p class="text-sm text-slate-400 text-balance">Finding hidden patterns (No Labels).</p>
+            </div>
+            <div class="bg-white/5 p-6 rounded-2xl border border-white/10 text-center flex-1">
+                <div class="text-4xl mb-4">🎮</div>
+                <h4 class="font-bold text-xl mb-2">Reinforcement</h4>
+                <p class="text-sm text-slate-400 text-balance">Trial, Error and Rewards.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide flex-col p-10" id="slide-4">
+        <h2 class="text-5xl font-black mb-10">Why do we need ML?</h2>
+        <div class="text-left space-y-6 text-2xl">
+            <p class="flex items-center gap-4">🚀 <span class="font-bold text-sky-400">Scale:</span> Millions of data
+                points handling.</p>
+            <p class="flex items-center gap-4">🧠 <span class="font-bold text-indigo-400">Complexity:</span> Complex
+                patterns like Face ID.</p>
+            <p class="flex items-center gap-4">⚡ <span class="font-bold text-emerald-400">Speed:</span> Real-time
+                predictions.</p>
+        </div>
+    </div>
+
+    <script>
+        const slides = [
+            { id: 'slide-1', text: "Welcome students. Today we start with Machine Learning. It is the field of study that gives computers the ability to learn without being explicitly programmed. Think of it as teaching a child using examples." },
+            { id: 'slide-2', text: "Look at the difference. In traditional programming, we give data and rules to get answers. But in Machine Learning, we give data and answers, and the machine provides us with the logic or rules." },
+            { id: 'slide-3', text: "There are three main types. Supervised learning uses a teacher. Unsupervised learning finds hidden patterns alone. And reinforcement learning learns through trial and error, like playing a game." },
+            { id: 'slide-4', text: "Why do we need this? Because data is growing fast. Humans cannot manually process billions of emails or photos. Machine Learning gives us the speed and scale to automate the world." }
+        ];
+
+        let currentSlide = 0;
+
+        function speak(text, callback) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; // Thoda slow taake samajh aaye
+            utterance.pitch = 1;
+            utterance.onend = callback;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function showSlide(index) {
+            // Hide all
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+
+            if (index < slides.length) {
+                const slideObj = slides[index];
+                document.getElementById(slideObj.id).classList.add('active');
+
+                // Speak the content
+                speak(slideObj.text, () => {
+                    // Wait 2 seconds and go to next
+                    setTimeout(() => {
+                        currentSlide++;
+                        showSlide(currentSlide);
+                    }, 2000);
+                });
+            } else {
+                // Presentation End
+                alert("Lecture Completed!");
+                location.reload();
+            }
+        }
+
+        function startPresentation() {
+            document.getElementById('start-screen').style.display = 'none';
+            showSlide(0);
+        }
+    </script>
+</body>
+
+</html>

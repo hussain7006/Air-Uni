@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLS Interactive Lab - Air University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+
+        body {
+            background-color: #020617;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+        }
+
+        .matrix-grid {
+            display: grid;
+            gap: 4px;
+            font-family: monospace;
+            font-size: 9px;
+            text-align: center;
+        }
+
+        .cell {
+            width: 42px;
+            height: 32px;
+            display: flex;
+            items-center;
+            justify-content: center;
+            border-radius: 4px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            transition: all 0.4s ease;
+        }
+
+        .cell-moving {
+            background: #2563eb !important;
+            color: white;
+            transform: scale(1.1) rotate(5deg);
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+        }
+
+        .cell-active-row {
+            background: #1e40af !important;
+            border-color: #3b82f6 !important;
+            color: white;
+        }
+
+        .cell-active-col {
+            background: #065f46 !important;
+            border-color: #10b981 !important;
+            color: white;
+        }
+
+        .lang-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .input-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 5px 10px;
+            width: 80px;
+            color: #60a5fa;
+        }
+
+        .step-info-card {
+            background: linear-gradient(to right, rgba(30, 58, 138, 0.2), rgba(2, 6, 23, 0.1));
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+
+<body class="p-4 lg:p-10">
+
+    <button onclick="toggleLanguage()" class="lang-btn" id="lang-switcher">Switch to English</button>
+
+    <div class="max-w-7xl mx-auto">
+
+        <header class="mb-10 text-center animate__animated animate__fadeIn">
+            <span class="text-blue-500 font-bold tracking-[0.3em] text-xs uppercase">Department of Electrical - Air
+                University</span>
+            <h1 class="text-4xl font-extrabold text-white mt-2">OLS Step-by-Step Visualization</h1>
+            <p class="max-w-2xl mx-auto text-slate-400 mt-4 text-sm translatable"
+                data-en="Explore the mathematics behind Linear Regression using the Normal Equation."
+                data-ur="Normal Equation ke zariye Linear Regression ki math ko detail mein samjhein.">
+                Normal Equation ke zariye Linear Regression ki math ko detail mein samjhein.
+            </p>
+        </header>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass p-6">
+                    <h2 class="text-lg font-bold mb-4 translatable" data-en="Input Dataset" data-ur="Asal Dataset">Asal
+                        Dataset</h2>
+                    <table class="w-full text-[10px] mb-6">
+                        <tr class="bg-slate-900 text-blue-400 font-bold">
+                            <td>Size</td>
+                            <td>Bed</td>
+                            <td>Floor</td>
+                            <td>Age</td>
+                            <td>Price</td>
+                        </tr>
+                        <tr>
+                            <td>2104</td>
+                            <td>5</td>
+                            <td>1</td>
+                            <td>45</td>
+                            <td>460</td>
+                        </tr>
+                        <tr>
+                            <td>1416</td>
+                            <td>3</td>
+                            <td>2</td>
+                            <td>40</td>
+                            <td>232</td>
+                        </tr>
+                        <tr>
+                            <td>1534</td>
+                            <td>3</td>
+                            <td>2</td>
+                            <td>30</td>
+                            <td>315</td>
+                        </tr>
+                        <tr>
+                            <td>852</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>36</td>
+                            <td>178</td>
+                        </tr>
+                        <tr>
+                            <td>3000</td>
+                            <td>4</td>
+                            <td>1</td>
+                            <td>38</td>
+                            <td>540</td>
+                        </tr>
+                    </table>
+
+                    <div id="step-desc-box" class="step-info-card p-5 mb-6 rounded-r-xl">
+                        <h4 id="step-name" class="text-blue-400 font-bold text-xs uppercase mb-2 translatable"
+                            data-en="Preparation" data-ur="Tayyari">Tayyari</h4>
+                        <p id="step-detail" class="text-xs text-slate-300 leading-relaxed translatable"
+                            data-en="Matrix X represents our house features. Click below to begin the Transpose operation."
+                            data-ur="Matrix X hamare gharon ke features ko dikhata hai. Transpose shuru karne ke liye niche click karein.">
+                            Matrix X hamare gharon ke features ko dikhata hai. Transpose shuru karne ke liye niche click
+                            karein.
+                        </p>
+                    </div>
+
+                    <button onclick="handleFlow()" id="main-btn"
+                        class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg transition-all text-sm">
+                        BEGIN TRANSPOSE →
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8">
+                <div class="glass p-8 min-h-[600px] flex flex-col relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-10 border-b border-white/5 pb-4">
+                        <h2 id="anim-title" class="text-xl font-black text-white italic">Workspace: Standing By</h2>
+                        <div id="step-counter"
+                            class="text-[10px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 font-mono">
+                            STEP 0/3</div>
+                    </div>
+
+                    <div id="stage" class="flex-grow flex flex-wrap justify-center items-center gap-8">
+                        <div class="flex flex-col items-center">
+                            <span id="label-left" class="text-[9px] text-slate-500 mb-2 font-mono">MATRIX X</span>
+                            <div id="grid-left" class="matrix-grid"></div>
+                        </div>
+                        <div id="operator" class="text-2xl font-bold text-slate-700 hidden">×</div>
+                        <div id="wrap-right" class="flex flex-col items-center hidden">
+                            <span id="label-right" class="text-[9px] text-slate-500 mb-2 font-mono">MATRIX X</span>
+                            <div id="grid-right" class="matrix-grid"></div>
+                        </div>
+                        <div id="equal-sign" class="text-2xl font-bold text-slate-700 hidden">=</div>
+                        <div id="wrap-res" class="flex flex-col items-center hidden">
+                            <span id="label-res" class="text-[9px] text-emerald-500 mb-2 font-mono">RESULT (XᵀX)</span>
+                            <div id="grid-res" class="matrix-grid"></div>
+                        </div>
+                    </div>
+
+                    <div id="prediction-engine" class="hidden animate__animated animate__fadeInUp">
+                        <div class="bg-black/50 p-6 rounded-2xl border border-emerald-500/20">
+                            <h3 class="text-emerald-400 font-bold mb-4 translatable" data-en="Live Prediction"
+                                data-ur="Live Prediction">Live Prediction</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div><label class="text-[10px] text-slate-500 block">Size</label><input type="number"
+                                        id="in-size" value="2000" class="input-box"></div>
+                                <div><label class="text-[10px] text-slate-500 block">Bedrooms</label><input
+                                        type="number" id="in-bed" value="3" class="input-box"></div>
+                                <div><label class="text-[10px] text-slate-500 block">Floors</label><input type="number"
+                                        id="in-floor" value="1" class="input-box"></div>
+                                <div><label class="text-[10px] text-slate-500 block">Age</label><input type="number"
+                                        id="in-age" value="10" class="input-box"></div>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-emerald-500/10 rounded-xl">
+                                <p id="model-equation" class="text-xs font-mono text-blue-300">y = ...</p>
+                                <p id="prediction-result" class="text-3xl font-black text-white">$ 0.00</p>
+                            </div>
+                            <button onclick="calculate()"
+                                class="w-full mt-4 py-3 bg-emerald-600 rounded-xl font-bold hover:bg-emerald-500">RUN
+                                MODEL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let isEnglish = false;
+        let flowStep = 0;
+        const X_DATA = [[1, 2104, 5, 1, 45], [1, 1416, 3, 2, 40], [1, 1534, 3, 2, 30], [1, 852, 2, 1, 36], [1, 3000, 4, 1, 38]];
+        const Y_DATA = [460, 232, 315, 178, 540];
+        let isModelTrained = false;
+        let MODEL_WEIGHTS = {
+            bias: 0,
+            size: 0,
+            bed: 0,
+            floor: 0,
+            age: 0
+        };
+
+        function formatTerm(value, symbol, decimals = 2) {
+            const sign = value >= 0 ? '+' : '-';
+            return `${sign} ${Math.abs(value).toFixed(decimals)}(${symbol})`;
+        }
+
+        function updateModelEquation() {
+            const eq = document.getElementById('model-equation');
+            if (!eq) return;
+            if (!isModelTrained) {
+                eq.innerText = 'Model not trained yet';
+                return;
+            }
+            eq.innerText = `y = ${MODEL_WEIGHTS.bias.toFixed(1)} ${formatTerm(MODEL_WEIGHTS.size, 'S', 3)} ${formatTerm(MODEL_WEIGHTS.bed, 'B')} ${formatTerm(MODEL_WEIGHTS.floor, 'F')} ${formatTerm(MODEL_WEIGHTS.age, 'A')}`;
+        }
+
+        function transpose(matrix) {
+            return matrix[0].map((_, colIdx) => matrix.map(row => row[colIdx]));
+        }
+
+        function multiply(a, b) {
+            const rows = a.length;
+            const cols = b[0].length;
+            const inner = b.length;
+            const result = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    let sum = 0;
+                    for (let k = 0; k < inner; k++) {
+                        sum += a[i][k] * b[k][j];
+                    }
+                    result[i][j] = sum;
+                }
+            }
+            return result;
+        }
+
+        function inverse(matrix) {
+            const n = matrix.length;
+            const aug = matrix.map((row, i) => [
+                ...row.map(v => Number(v)),
+                ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))
+            ]);
+
+            for (let i = 0; i < n; i++) {
+                let pivotRow = i;
+                for (let r = i + 1; r < n; r++) {
+                    if (Math.abs(aug[r][i]) > Math.abs(aug[pivotRow][i])) pivotRow = r;
+                }
+
+                if (Math.abs(aug[pivotRow][i]) < 1e-12) {
+                    throw new Error('Matrix is singular and cannot be inverted');
+                }
+
+                if (pivotRow !== i) {
+                    const temp = aug[i];
+                    aug[i] = aug[pivotRow];
+                    aug[pivotRow] = temp;
+                }
+
+                const pivot = aug[i][i];
+                for (let c = 0; c < 2 * n; c++) aug[i][c] /= pivot;
+
+                for (let r = 0; r < n; r++) {
+                    if (r === i) continue;
+                    const factor = aug[r][i];
+                    for (let c = 0; c < 2 * n; c++) {
+                        aug[r][c] -= factor * aug[i][c];
+                    }
+                }
+            }
+
+            return aug.map(row => row.slice(n));
+        }
+
+        function trainModel() {
+            try {
+                const yCol = Y_DATA.map(v => [v]);
+                const xt = transpose(X_DATA);
+                const xtx = multiply(xt, X_DATA);
+                const xtxInv = inverse(xtx);
+                const xty = multiply(xt, yCol);
+                const theta = multiply(xtxInv, xty);
+
+                MODEL_WEIGHTS = {
+                    bias: theta[0][0],
+                    size: theta[1][0],
+                    bed: theta[2][0],
+                    floor: theta[3][0],
+                    age: theta[4][0]
+                };
+                isModelTrained = true;
+                updateModelEquation();
+                return true;
+            } catch (err) {
+                console.error('Training failed:', err);
+                isModelTrained = false;
+                updateModelEquation();
+                return false;
+            }
+        }
+
+        function createGrid(elId, data, rows, cols) {
+            const grid = document.getElementById(elId);
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.innerHTML = '';
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const val = data[i][j];
+                    const display = val > 1000 ? (val / 1000).toFixed(1) + 'k' : val;
+                    grid.innerHTML += `<div class="cell" id="${elId}-${i}-${j}">${display}</div>`;
+                }
+            }
+        }
+
+        async function animateTranspose() {
+            flowStep = 1;
+            document.getElementById('main-btn').disabled = true;
+            document.getElementById('anim-title').innerText = "Step 1: Transposing Matrix X";
+            document.getElementById('step-counter').innerText = "STEP 1/3";
+
+            // Text explanation for Transpose
+            document.getElementById('step-name').innerText = isEnglish ? "Matrix Transpose" : "Matrix Transpose";
+            document.getElementById('step-detail').innerText = isEnglish ?
+                "We flip the Matrix over its diagonal. Rows become Columns. This is required because we cannot multiply a matrix with itself unless it's square or transposed." :
+                "Hum matrix ko uske diagonal ke gird flip karte hain. Is se Rows, Columns ban jati hain. Ye is liye zaroori hai kyunke multiplication ke liye dimensions ka match hona lazmi hai.";
+
+            for (let j = 0; j < 5; j++) {
+                for (let i = 0; i < 5; i++) {
+                    if (i > j) {
+                        const c1 = document.getElementById(`grid-left-${i}-${j}`);
+                        const c2 = document.getElementById(`grid-left-${j}-${i}`);
+                        c1.classList.add('cell-moving'); c2.classList.add('cell-moving');
+                        await new Promise(r => setTimeout(r, 150));
+                        let tmp = c1.innerText; c1.innerText = c2.innerText; c2.innerText = tmp;
+                        c1.classList.remove('cell-moving'); c2.classList.remove('cell-moving');
+                    }
+                }
+            }
+            document.getElementById('main-btn').innerText = "START MULTIPLICATION →";
+            document.getElementById('main-btn').disabled = false;
+        }
+
+        async function animateMulti() {
+            flowStep = 2;
+            document.getElementById('main-btn').disabled = true;
+            document.getElementById('anim-title').innerText = "Step 2: Matrix Multiplication (XᵀX)";
+            document.getElementById('step-counter').innerText = "STEP 2/3";
+
+            // Text explanation for Multiplication
+            document.getElementById('step-name').innerText = isEnglish ? "Matrix Multiplication" : "Matrix Zarab (Multiplication)";
+            document.getElementById('step-detail').innerText = isEnglish ?
+                "We take the Dot Product of Xᵀ's rows and X's columns. This calculates the correlations between our different house features." :
+                "Hum Xᵀ ki rows ko X ke columns se multiply karke jama karte hain (Dot Product). Is se features ke darmiyan correlation maloom hota hai.";
+
+            document.getElementById('operator').classList.remove('hidden');
+            document.getElementById('wrap-right').classList.remove('hidden');
+            document.getElementById('equal-sign').classList.remove('hidden');
+            document.getElementById('wrap-res').classList.remove('hidden');
+            createGrid('grid-right', X_DATA, 5, 5);
+            createGrid('grid-res', Array(5).fill('?').map(() => Array(5).fill('?')), 5, 5);
+
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    for (let k = 0; k < 5; k++) {
+                        document.getElementById(`grid-left-${i}-${k}`).classList.add('cell-active-row');
+                        document.getElementById(`grid-right-${k}-${j}`).classList.add('cell-active-col');
+                    }
+                    await new Promise(r => setTimeout(r, 80));
+                    document.getElementById(`grid-res-${i}-${j}`).innerText = 'OK';
+                    document.getElementById(`grid-res-${i}-${j}`).style.backgroundColor = '#1e1b4b';
+                    for (let k = 0; k < 5; k++) {
+                        document.getElementById(`grid-left-${i}-${k}`).classList.remove('cell-active-row');
+                        document.getElementById(`grid-right-${k}-${j}`).classList.remove('cell-active-col');
+                    }
+                }
+            }
+            document.getElementById('main-btn').innerText = "REVEAL FINAL MODEL →";
+            document.getElementById('main-btn').disabled = false;
+        }
+
+        function handleFlow() {
+            if (flowStep === 0) animateTranspose();
+            else if (flowStep === 1) animateMulti();
+            else {
+                document.getElementById('stage').classList.add('hidden');
+                document.getElementById('prediction-engine').classList.remove('hidden');
+                trainModel();
+                document.getElementById('anim-title').innerText = "Final Step: House Price Model";
+                document.getElementById('step-counter').innerText = "COMPLETED";
+                document.getElementById('step-name').innerText = isEnglish ? "Optimal Solution Found" : "Behtareen Solution Mil Gaya";
+                document.getElementById('step-detail').innerText = isEnglish ?
+                    "The Normal Equation is solved! We now have the weights (θ) that minimize the error for our house data." :
+                    "Normal Equation solve ho gayi! Ab hamare paas wo weights (θ) hain jo hamari prediction mein ghalti (error) ko kam se kam karte hain.";
+                document.getElementById('main-btn').innerText = "RESTART LAB";
+                document.getElementById('main-btn').onclick = () => location.reload();
+                calculate();
+            }
+        }
+
+        function calculate() {
+            if (!isModelTrained) {
+                trainModel();
+            }
+            const s = parseFloat(document.getElementById('in-size').value);
+            const b = parseFloat(document.getElementById('in-bed').value);
+            const f = parseFloat(document.getElementById('in-floor').value);
+            const a = parseFloat(document.getElementById('in-age').value);
+            const res = MODEL_WEIGHTS.bias
+                + (MODEL_WEIGHTS.size * s)
+                + (MODEL_WEIGHTS.bed * b)
+                + (MODEL_WEIGHTS.floor * f)
+                + (MODEL_WEIGHTS.age * a);
+            document.getElementById('prediction-result').innerText = `$ ${res.toFixed(1)}k`;
+        }
+
+        function toggleLanguage() {
+            isEnglish = !isEnglish;
+            document.getElementById('lang-switcher').innerText = isEnglish ? "Switch to Roman" : "Switch to English";
+            document.querySelectorAll('.translatable').forEach(el => {
+                el.innerText = isEnglish ? el.getAttribute('data-en') : el.getAttribute('data-ur');
+            });
+        }
+
+        updateModelEquation();
+        createGrid('grid-left', X_DATA, 5, 5);
+    </script>
+</body>
+
+</html>

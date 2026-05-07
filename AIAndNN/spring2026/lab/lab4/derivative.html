@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lab: Derivation Masterclass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Outfit:wght@300;400;700;900&display=swap');
+        body { background: #010409; color: #e6edf3; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+        .math-font { font-family: 'JetBrains Mono', monospace; }
+        .glass { background: rgba(13, 17, 23, 0.7); backdrop-filter: blur(12px); border: 1px solid #30363d; }
+        .step-card { transition: all 0.3s ease; }
+        .step-card:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        .latex-span { color: #38bdf8; font-weight: bold; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-10 text-center">
+            <h1 class="text-4xl font-black text-white tracking-tighter italic uppercase">
+                Derivation <span class="text-blue-500">Flow</span>
+            </h1>
+            <p class="text-slate-500 text-sm mt-2 tracking-widest uppercase">LMS Gradient Descent Update Rules</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            
+            <div class="space-y-6">
+                
+                <div class="glass p-6 rounded-2xl step-card" id="step1">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">1</span>
+                        <h3 class="font-bold text-lg">The Cost Function (MSE)</h3>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Pehle hum apna objective define karte hain: Total Squared Error ka average nikalna.</p>
+                    <div class="bg-black/50 p-4 rounded-xl text-center border border-slate-800">
+                        <p class="math-font text-blue-400 text-lg">J(θ) = 1/2m ∑ (h(x) - y)²</p>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-2xl step-card" id="step2">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">2</span>
+                        <h3 class="font-bold text-lg">Applying Chain Rule</h3>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Calculus ka rule: Power '2' baahar aayegi aur andar wali term ka derivative multiply hoga.</p>
+                    <div class="bg-black/50 p-4 rounded-xl space-y-2 border border-slate-800 text-[13px] math-font text-slate-300">
+                        <p>∂J/∂θ₀ = 1/2m · 2 ∑ (h(x) - y) · <span class="text-yellow-500">∂/∂θ₀(h(x)-y)</span></p>
+                        <p class="text-slate-500">Note: 2 se 2 cancel ho jayega!</p>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-2xl step-card border-l-4 border-green-500" id="step3">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="w-8 h-8 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center font-bold">3</span>
+                        <h3 class="font-bold text-lg">The Final Update Rules</h3>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Ye hain wo final equations jo aap apne Python code mein likhenge.</p>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="p-3 bg-green-500/5 rounded-lg border border-green-500/20">
+                            <p class="text-[10px] uppercase text-green-500 font-bold mb-1">For Intercept (θ₀)</p>
+                            <p class="math-font text-white">θ₀ := θ₀ - α · 1/m ∑ (h(x) - y)</p>
+                        </div>
+                        <div class="p-3 bg-green-500/5 rounded-lg border border-green-500/20">
+                            <p class="text-[10px] uppercase text-green-500 font-bold mb-1">For Slope (θ₁)</p>
+                            <p class="math-font text-white">θ₁ := θ₁ - α · 1/m ∑ (h(x) - y) · <span class="text-yellow-500 italic font-bold">x</span></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:sticky lg:top-10 h-fit space-y-6">
+                <div class="glass p-6 rounded-[2.5rem] border border-blue-500/30 overflow-hidden relative">
+                    <div class="absolute top-0 right-0 p-4">
+                        <div class="flex gap-1">
+                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                        </div>
+                    </div>
+                    
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Python Implementation</h4>
+                    
+                    <pre class="math-font text-sm leading-relaxed p-4 bg-black/40 rounded-2xl border border-white/5 overflow-x-auto">
+<span class="text-slate-600"># m = total data points
+# alpha = learning rate</span>
+
+<span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> range(iters):
+    h_x = theta_0 + theta_1 * x
+    
+    <span class="text-slate-600"># Step 3 Mapping:</span>
+    <span id="code-0" class="transition-all duration-500 p-1 rounded">theta_0 -= alpha * (1/m) * sum(h_x - y)</span>
+    
+    <span id="code-1" class="transition-all duration-500 p-1 rounded">theta_1 -= alpha * (1/m) * sum((h_x - y) * x)</span>
+                    </pre>
+
+                    <div class="mt-6">
+                        <button onclick="animateDerivation()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-500/20 transition-all uppercase tracking-tighter">
+                            Animate Logic Flow
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-5 bg-yellow-500/5 rounded-2xl border border-yellow-500/20">
+                    <p class="text-yellow-500 font-bold text-xs uppercase mb-2">Instructor's Note:</p>
+                    <p class="text-slate-400 text-xs italic">"Students ko samjhayein ke θ₁ mein 'x' multiply is liye ho raha hai kyunke chain rule ke mutabiq h(x) ka derivative w.r.t θ₁ sirf 'x' bachta hai."</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function animateDerivation() {
+            const s1 = document.getElementById('step1');
+            const s2 = document.getElementById('step2');
+            const s3 = document.getElementById('step3');
+            const c0 = document.getElementById('code-0');
+            const c1 = document.getElementById('code-1');
+
+            // Reset
+            [s1, s2, s3, c0, c1].forEach(el => {
+                el.style.transform = "scale(1)";
+                el.style.backgroundColor = "transparent";
+            });
+
+            // Sequence
+            setTimeout(() => { 
+                s1.style.transform = "scale(1.02)"; 
+                s1.style.borderColor = "#3b82f6";
+            }, 0);
+
+            setTimeout(() => { 
+                s2.style.transform = "scale(1.02)"; 
+                s2.style.borderColor = "#3b82f6";
+            }, 1000);
+
+            setTimeout(() => { 
+                s3.style.transform = "scale(1.05)"; 
+                s3.style.borderColor = "#22c55e";
+                c0.style.backgroundColor = "rgba(34, 197, 94, 0.2)";
+                c1.style.backgroundColor = "rgba(34, 197, 94, 0.2)";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

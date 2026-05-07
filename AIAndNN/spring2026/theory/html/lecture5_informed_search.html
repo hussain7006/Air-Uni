@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lecture 5 - Informed Search Strategies</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+
+    :root {
+      --bg: #f7f4ed;
+      --bg-2: #efe8d8;
+      --card: #fffdf8;
+      --ink: #1d2433;
+      --muted: #586072;
+      --accent: #1c7c77;
+      --accent-2: #f08a4b;
+      --accent-3: #4b5cc4;
+      --ok: #2f9e44;
+      --warn: #d9480f;
+      --shadow: 0 16px 40px rgba(33, 37, 41, 0.12);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 10%, #e2f2ee 0, transparent 35%),
+        radial-gradient(circle at 90% 20%, #fde5d8 0, transparent 30%),
+        linear-gradient(165deg, var(--bg), var(--bg-2));
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .wrap {
+      width: min(1100px, 92%);
+      margin: 0 auto;
+      padding-bottom: 60px;
+    }
+
+    .hero {
+      margin-top: 26px;
+      background: linear-gradient(120deg, #0f3d3a, #195f58 55%, #1f7e75);
+      color: #f7fff9;
+      border-radius: 24px;
+      padding: 44px 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(2px);
+      opacity: 0.25;
+      animation: float 7s ease-in-out infinite;
+      z-index: -1;
+    }
+
+    .blob.one {
+      width: 220px;
+      height: 220px;
+      right: -50px;
+      top: -40px;
+      background: #f5c38e;
+    }
+
+    .blob.two {
+      width: 280px;
+      height: 280px;
+      left: -90px;
+      bottom: -130px;
+      background: #74d9ce;
+      animation-delay: 1.1s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-12px) scale(1.03); }
+    }
+
+    h1, h2 {
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 2.8vw, 3rem);
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      color: #dff2ea;
+      font-size: clamp(1rem, 1.7vw, 1.18rem);
+    }
+
+    .pill-row {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      backdrop-filter: blur(2px);
+    }
+
+    .grid {
+      margin-top: 26px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #e4ddcf;
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      margin-bottom: 8px;
+      color: #0f3f3a;
+      font-size: 1.08rem;
+    }
+
+    .section {
+      margin-top: 26px;
+      padding: 26px;
+      background: rgba(255, 253, 248, 0.85);
+      border: 1px solid #e6dece;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .section h2 {
+      margin-bottom: 10px;
+      color: #1f2f4b;
+      font-size: clamp(1.35rem, 2.4vw, 2rem);
+    }
+
+    .section p, .section li {
+      color: #384052;
+    }
+
+    .urdu {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.05rem;
+      color: #3f2f2b;
+      background: #fff8ee;
+      border-left: 4px solid var(--accent-2);
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+
+    ul {
+      margin-left: 18px;
+      margin-top: 10px;
+    }
+
+    .formula {
+      margin-top: 14px;
+      background: #f2faf9;
+      border: 1px solid #d2ece8;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #0e5952;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      border-radius: 10px;
+      overflow: hidden;
+      font-size: 0.95rem;
+    }
+
+    .table th, .table td {
+      border: 1px solid #e8dfce;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .table th {
+      background: #f2ece0;
+      color: #40392d;
+    }
+
+    .demo {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .graph {
+      background: #fffaf0;
+      border: 1px solid #e7dcc8;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .node {
+      fill: #f6f2e8;
+      stroke: #43517a;
+      stroke-width: 2;
+      transition: all 0.35s ease;
+    }
+
+    .node.visited {
+      fill: #ffd9bf;
+      stroke: #d9480f;
+    }
+
+    .node.path {
+      fill: #c9f0df;
+      stroke: #157347;
+      stroke-width: 2.5;
+    }
+
+    .edge {
+      stroke: #8f98ab;
+      stroke-width: 2;
+    }
+
+    .edge.path {
+      stroke: #157347;
+      stroke-width: 3;
+    }
+
+    .controls button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-right: 8px;
+      margin-top: 4px;
+      cursor: pointer;
+      font-weight: 700;
+      color: white;
+      transition: transform 0.2s ease;
+    }
+
+    .controls button:hover { transform: translateY(-2px); }
+
+    #runGreedy { background: var(--warn); }
+    #runAStar { background: var(--accent-3); }
+    #reset { background: #495057; }
+
+    .panel {
+      background: #f9f7f1;
+      border: 1px solid #e8dece;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tree-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .tree-card {
+      border: 1px solid #e4d8c7;
+      border-radius: 14px;
+      background: #fffaf2;
+      padding: 12px;
+    }
+
+    .tree-title {
+      font-weight: 700;
+      color: #243b55;
+      margin-bottom: 6px;
+    }
+
+    .tree-edge {
+      stroke: #96a0b3;
+      stroke-width: 2;
+      transition: all 0.3s ease;
+    }
+
+    .tree-edge.path {
+      stroke: #157347;
+      stroke-width: 3;
+    }
+
+    .tree-node {
+      fill: #f4efe2;
+      stroke: #49557a;
+      stroke-width: 2;
+      transition: all 0.3s ease;
+    }
+
+    .tree-node.visited {
+      fill: #ffe0c7;
+      stroke: #d9480f;
+    }
+
+    .tree-node.path {
+      fill: #cdf3e3;
+      stroke: #157347;
+      stroke-width: 2.6;
+    }
+
+    .tree-actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tree-actions button {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tree-actions .run {
+      background: #b94d00;
+    }
+
+    .tree-actions .clear {
+      background: #495057;
+    }
+
+    .english-note {
+      background: #f1f8ff;
+      border: 1px solid #d5e6f8;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e7f6f3;
+      color: #0e5852;
+      border: 1px solid #caebe5;
+    }
+
+    .quiz {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .q {
+      border: 1px solid #e6dccb;
+      background: #fffcf4;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .answer {
+      margin-top: 8px;
+      color: #0f5132;
+      font-weight: 600;
+      display: none;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .reveal.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer {
+      margin: 26px 0 10px;
+      text-align: center;
+      color: #5b6376;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .demo { grid-template-columns: 1fr; }
+      .hero { padding: 30px 20px; }
+      .section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero reveal show">
+      <div class="blob one"></div>
+      <div class="blob two"></div>
+      <h1>Lecture 5: Informed Search Strategies</h1>
+      <p class="subtitle">AI me "smart search" ka idea: random ya blind search ki jagah, heuristic (educated guess) use karke goal tak fast pohanchna.</p>
+      <div class="pill-row">
+        <span class="pill">Heuristic h(n)</span>
+        <span class="pill">Greedy Best-First Search</span>
+        <span class="pill">A* Search</span>
+        <span class="pill">Optimality & Completeness</span>
+      </div>
+    </section>
+
+    <section class="grid reveal">
+      <article class="card">
+        <h3>Informed Search Kya Hai?</h3>
+        <p>Informed search problem-specific knowledge use karta hai taake best next move choose kiya ja sake.</p>
+      </article>
+      <article class="card">
+        <h3>Heuristic = Smart Guess</h3>
+        <p>Heuristic batata hai ke kisi node se goal kitna qareeb ya door ho sakta hai.</p>
+      </article>
+      <article class="card">
+        <h3>Speed vs Accuracy</h3>
+        <p>Kuch algorithms fast hote hain, kuch guaranteed best answer dete hain. Trade-off samajhna zaroori hai.</p>
+      </article>
+      <article class="card">
+        <h3>Real AI Use</h3>
+        <p>Navigation apps, game AI, robotics path planning me informed search bohat common hai.</p>
+      </article>
+    </section>
+
+    <section class="section reveal">
+      <h2>1) Heuristic Function h(n)</h2>
+      <p>Heuristic function node <strong>n</strong> se goal tak remaining cost ka estimate deti hai.</p>
+      <ul>
+        <li>h(n) &ge; 0 hota hai.</li>
+        <li>Goal node par h(goal) = 0 hota hai.</li>
+        <li>Chhota h(n) usually matlab goal qareeb.</li>
+        <li>Example: Euclidean distance (straight line distance).</li>
+      </ul>
+      <p class="urdu">Simple lafzon me: heuristic aik "direction hint" hai. Ye hume batata hai kis side jana behtar lag raha hai.</p>
+    </section>
+
+    <section class="section reveal">
+      <h2>2) Why Informed Search?</h2>
+      <ul>
+        <li><strong>Efficiency:</strong> blind search se generally fast.</li>
+        <li><strong>Direction:</strong> random explore karne ke bajaye goal ki taraf move karta hai.</li>
+        <li><strong>Resource Saving:</strong> kam memory aur kam time.</li>
+      </ul>
+      <p class="urdu">Agar state space bohat bara ho, to informed search practical approach ban jata hai.</p>
+    </section>
+
+    <section class="section reveal">
+      <h2>3) Greedy Best-First Search (GBFS)</h2>
+      <p>GBFS sirf <strong>h(n)</strong> dekh kar node choose karta hai jiska heuristic sab se kam ho.</p>
+      <div class="formula">Selection Rule: choose node with minimum h(n)</div>
+      <ul>
+        <li><strong>Pros:</strong> fast, kam nodes explore karta hai.</li>
+        <li><strong>Cons:</strong> optimal guaranteed nahi, loops ka risk agar visited handling na ho.</li>
+      </ul>
+      <p class="urdu">Greedy approach: "abhi jo best lag raha hai usi taraf chalo". Kabhi bohat achha, kabhi trap me bhi le ja sakta hai.</p>
+    </section>
+
+    <section class="section reveal">
+      <h2>4) A* Search</h2>
+      <p>A* Uniform Cost Search + Greedy ka combined strong version hai.</p>
+      <div class="formula">f(n) = g(n) + h(n)</div>
+      <ul>
+        <li><strong>g(n):</strong> start se n tak exact cost.</li>
+        <li><strong>h(n):</strong> n se goal tak estimated cost.</li>
+        <li><strong>f(n):</strong> total estimated path cost.</li>
+      </ul>
+      <p>Admissible heuristic ho (never overestimate), to A* optimal path deta hai.</p>
+    </section>
+
+    <section class="section reveal">
+      <h2>5) GBFS vs A* Quick Comparison</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>GBFS</th>
+            <th>A*</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Evaluation</td>
+            <td>h(n)</td>
+            <td>g(n) + h(n)</td>
+          </tr>
+          <tr>
+            <td>Speed</td>
+            <td>Usually very fast</td>
+            <td>Moderate (depends on heuristic)</td>
+          </tr>
+          <tr>
+            <td>Optimality</td>
+            <td>No guarantee</td>
+            <td>Yes, if heuristic admissible/consistent</td>
+          </tr>
+          <tr>
+            <td>Completeness</td>
+            <td>May fail in tricky spaces</td>
+            <td>Complete in finite spaces with proper heuristic</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section reveal">
+      <h2>6) Interactive Mini Demo (A to G)</h2>
+      <p>Same graph par Greedy aur A* ko run karo aur dekho expansion order aur final path me kya difference aata hai.</p>
+      <div class="demo">
+        <div class="graph">
+          <svg viewBox="0 0 620 280" aria-label="Search graph">
+            <line id="e-AB" class="edge" x1="70" y1="145" x2="170" y2="85"></line>
+            <line id="e-AC" class="edge" x1="70" y1="145" x2="170" y2="205"></line>
+            <line id="e-BD" class="edge" x1="170" y1="85" x2="300" y2="55"></line>
+            <line id="e-BE" class="edge" x1="170" y1="85" x2="300" y2="145"></line>
+            <line id="e-CF" class="edge" x1="170" y1="205" x2="300" y2="225"></line>
+            <line id="e-EG" class="edge" x1="300" y1="145" x2="520" y2="145"></line>
+            <line id="e-FG" class="edge" x1="300" y1="225" x2="520" y2="145"></line>
+            <line id="e-DG" class="edge" x1="300" y1="55" x2="520" y2="145"></line>
+
+            <g>
+              <circle id="n-A" class="node" cx="70" cy="145" r="22"></circle>
+              <circle id="n-B" class="node" cx="170" cy="85" r="22"></circle>
+              <circle id="n-C" class="node" cx="170" cy="205" r="22"></circle>
+              <circle id="n-D" class="node" cx="300" cy="55" r="22"></circle>
+              <circle id="n-E" class="node" cx="300" cy="145" r="22"></circle>
+              <circle id="n-F" class="node" cx="300" cy="225" r="22"></circle>
+              <circle id="n-G" class="node" cx="520" cy="145" r="22"></circle>
+            </g>
+
+            <g font-size="16" font-weight="700" fill="#1f2d3d" text-anchor="middle" dominant-baseline="middle">
+              <text x="70" y="145">A</text>
+              <text x="170" y="85">B</text>
+              <text x="170" y="205">C</text>
+              <text x="300" y="55">D</text>
+              <text x="300" y="145">E</text>
+              <text x="300" y="225">F</text>
+              <text x="520" y="145">G</text>
+            </g>
+          </svg>
+        </div>
+        <div class="panel">
+          <div class="controls">
+            <button id="runGreedy" type="button">Run Greedy</button>
+            <button id="runAStar" type="button">Run A*</button>
+            <button id="reset" type="button">Reset</button>
+          </div>
+          <p style="margin-top:10px;"><strong>Heuristic (to G):</strong> h(A)=40, h(B)=32, h(C)=25, h(D)=35, h(E)=19, h(F)=17, h(G)=0</p>
+          <p id="algoResult" style="margin-top:10px;color:#273043;">Algorithm run karo to result yahan show hoga.</p>
+          <div class="chips" id="expansionOrder"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2>7) A* Ki Power: Complete + Optimal</h2>
+      <ul>
+        <li><strong>Complete:</strong> finite space me solution milne ka strong chance, agar conditions satisfy hon.</li>
+        <li><strong>Optimal:</strong> admissible (aur preferably consistent) heuristic ke sath shortest path deta hai.</li>
+      </ul>
+      <p class="urdu">Isi wajah se A* practical AI systems me bohat popular hai jab hume "best path" chahiye hota hai, sirf "koi path" nahi.</p>
+    </section>
+
+    <section class="section reveal">
+      <h2>8) Quick Self-Check Quiz</h2>
+      <div class="quiz">
+        <div class="q">
+          <p><strong>Q1:</strong> GBFS node choose karte waqt kis value ko minimize karta hai?</p>
+          <button type="button" data-answer="a1">Show Answer</button>
+          <p id="a1" class="answer">GBFS sirf h(n) ko minimize karta hai.</p>
+        </div>
+        <div class="q">
+          <p><strong>Q2:</strong> A* me g(n) ka kya meaning hai?</p>
+          <button type="button" data-answer="a2">Show Answer</button>
+          <p id="a2" class="answer">Start se current node tak actual accumulated cost.</p>
+        </div>
+        <div class="q">
+          <p><strong>Q3:</strong> A* optimal kab hota hai?</p>
+          <button type="button" data-answer="a3">Show Answer</button>
+          <p id="a3" class="answer">Jab heuristic admissible ho (overestimate na kare), aur consistency ho to behavior aur stable hota hai.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2>9) Extra Animated Tree Examples</h2>
+      <p>Yahan do mini trees diye gaye hain jahan aap clear dekh sakte ho ke Greedy kab trap hota hai aur A* kaise better total-cost path choose karta hai.</p>
+      <div class="tree-grid">
+        <article class="tree-card">
+          <p class="tree-title">Example A: Greedy Trap Tree</p>
+          <svg viewBox="0 0 420 240" aria-label="Greedy trap tree">
+            <line id="t1-SA" class="tree-edge" x1="70" y1="45" x2="170" y2="105"></line>
+            <line id="t1-SB" class="tree-edge" x1="70" y1="45" x2="170" y2="185"></line>
+            <line id="t1-AG" class="tree-edge" x1="170" y1="105" x2="330" y2="45"></line>
+            <line id="t1-BC" class="tree-edge" x1="170" y1="185" x2="250" y2="185"></line>
+            <line id="t1-CG" class="tree-edge" x1="250" y1="185" x2="330" y2="45"></line>
+
+            <circle id="t1n-S" class="tree-node" cx="70" cy="45" r="18"></circle>
+            <circle id="t1n-A" class="tree-node" cx="170" cy="105" r="18"></circle>
+            <circle id="t1n-B" class="tree-node" cx="170" cy="185" r="18"></circle>
+            <circle id="t1n-C" class="tree-node" cx="250" cy="185" r="18"></circle>
+            <circle id="t1n-G" class="tree-node" cx="330" cy="45" r="18"></circle>
+
+            <g font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="middle" dominant-baseline="middle">
+              <text x="70" y="45">S</text>
+              <text x="170" y="105">A</text>
+              <text x="170" y="185">B</text>
+              <text x="250" y="185">C</text>
+              <text x="330" y="45">G</text>
+            </g>
+          </svg>
+          <p>h(A)=1, h(B)=4, h(C)=2, h(G)=0 | Costs: S-A=1, A-G=12, S-B=2, B-C=2, C-G=2</p>
+          <div class="tree-actions">
+            <button id="runTreeGreedy" class="run" type="button">Animate Greedy</button>
+            <button id="clearTreeGreedy" class="clear" type="button">Reset</button>
+          </div>
+          <p id="treeGreedyResult" style="margin-top:8px;color:#273043;">Run animation to compare decision quality.</p>
+        </article>
+
+        <article class="tree-card">
+          <p class="tree-title">Example B: A* Finds Lower Total Cost</p>
+          <svg viewBox="0 0 420 240" aria-label="A star optimal tree">
+            <line id="t2-SA" class="tree-edge" x1="70" y1="45" x2="170" y2="105"></line>
+            <line id="t2-SB" class="tree-edge" x1="70" y1="45" x2="170" y2="185"></line>
+            <line id="t2-AG" class="tree-edge" x1="170" y1="105" x2="330" y2="45"></line>
+            <line id="t2-BC" class="tree-edge" x1="170" y1="185" x2="250" y2="185"></line>
+            <line id="t2-CG" class="tree-edge" x1="250" y1="185" x2="330" y2="45"></line>
+
+            <circle id="t2n-S" class="tree-node" cx="70" cy="45" r="18"></circle>
+            <circle id="t2n-A" class="tree-node" cx="170" cy="105" r="18"></circle>
+            <circle id="t2n-B" class="tree-node" cx="170" cy="185" r="18"></circle>
+            <circle id="t2n-C" class="tree-node" cx="250" cy="185" r="18"></circle>
+            <circle id="t2n-G" class="tree-node" cx="330" cy="45" r="18"></circle>
+
+            <g font-size="13" font-weight="700" fill="#1f2d3d" text-anchor="middle" dominant-baseline="middle">
+              <text x="70" y="45">S</text>
+              <text x="170" y="105">A</text>
+              <text x="170" y="185">B</text>
+              <text x="250" y="185">C</text>
+              <text x="330" y="45">G</text>
+            </g>
+          </svg>
+          <p>Using f(n)=g(n)+h(n), A* avoids expensive shortcut and picks cheaper route.</p>
+          <div class="tree-actions">
+            <button id="runTreeAStar" class="run" type="button" style="background:#2f4eb0;">Animate A*</button>
+            <button id="clearTreeAStar" class="clear" type="button">Reset</button>
+          </div>
+          <p id="treeAStarResult" style="margin-top:8px;color:#273043;">Run animation to see optimal path choice.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2>10) English Version (Complete Notes)</h2>
+      <div class="english-note">
+        <p><strong>What is Informed Search?</strong> Informed search uses domain knowledge (heuristics) to guide exploration toward the goal faster than blind search.</p>
+        <ul>
+          <li><strong>Heuristic h(n):</strong> Estimated cost from node n to the goal.</li>
+          <li><strong>Properties:</strong> h(n) >= 0, and h(goal) = 0.</li>
+          <li><strong>GBFS:</strong> Expands node with lowest h(n). Fast, but not always optimal.</li>
+          <li><strong>A*:</strong> Uses f(n)=g(n)+h(n), combining actual path cost and estimated remaining cost.</li>
+          <li><strong>Optimality:</strong> A* is optimal with an admissible heuristic (never overestimates).</li>
+          <li><strong>Completeness:</strong> In finite spaces with proper conditions, A* is complete.</li>
+          <li><strong>Practical use:</strong> Navigation systems, robotics, game AI, and path planning.</li>
+        </ul>
+        <p><strong>Key intuition:</strong> GBFS follows what looks nearest now; A* balances “distance traveled so far” and “distance left,” so it usually makes better global decisions.</p>
+      </div>
+    </section>
+
+    <footer>
+      Prepared from Lecture 5 content - Informed Search in AI | Spring 2026
+    </footer>
+  </main>
+
+  <script>
+    const heuristics = { A: 40, B: 32, C: 25, D: 35, E: 19, F: 17, G: 0 };
+    const graph = {
+      A: [{ to: 'B', w: 7 }, { to: 'C', w: 10 }],
+      B: [{ to: 'D', w: 11 }, { to: 'E', w: 14 }],
+      C: [{ to: 'F', w: 15 }],
+      D: [{ to: 'G', w: 20 }],
+      E: [{ to: 'G', w: 8 }],
+      F: [{ to: 'G', w: 9 }],
+      G: []
+    };
+
+    const result = document.getElementById('algoResult');
+    const orderBox = document.getElementById('expansionOrder');
+
+    const revealItems = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('show');
+      });
+    }, { threshold: 0.15 });
+    revealItems.forEach(el => observer.observe(el));
+
+    document.querySelectorAll('[data-answer]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-answer');
+        const ans = document.getElementById(id);
+        ans.style.display = 'block';
+      });
+    });
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function resetGraph() {
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('visited', 'path'));
+      document.querySelectorAll('.edge').forEach(e => e.classList.remove('path'));
+      orderBox.innerHTML = '';
+      result.textContent = 'Algorithm run karo to result yahan show hoga.';
+    }
+
+    function edgeId(a, b) {
+      const id1 = `e-${a}${b}`;
+      const id2 = `e-${b}${a}`;
+      return document.getElementById(id1) ? id1 : id2;
+    }
+
+    function markPath(path) {
+      path.forEach(n => document.getElementById(`n-${n}`)?.classList.add('path'));
+      for (let i = 0; i < path.length - 1; i++) {
+        const eid = edgeId(path[i], path[i + 1]);
+        document.getElementById(eid)?.classList.add('path');
+      }
+    }
+
+    function reconstruct(parent, goal) {
+      const p = [];
+      let cur = goal;
+      while (cur) {
+        p.push(cur);
+        cur = parent[cur];
+      }
+      return p.reverse();
+    }
+
+    function costOf(path) {
+      let total = 0;
+      for (let i = 0; i < path.length - 1; i++) {
+        const from = path[i], to = path[i + 1];
+        const edge = graph[from].find(e => e.to === to);
+        if (edge) total += edge.w;
+      }
+      return total;
+    }
+
+    async function animateVisit(order) {
+      for (const n of order) {
+        const node = document.getElementById(`n-${n}`);
+        node?.classList.add('visited');
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = n;
+        orderBox.appendChild(chip);
+        await sleep(350);
+      }
+    }
+
+    function greedy() {
+      const open = ['A'];
+      const visited = new Set();
+      const parent = { A: null };
+      const expansion = [];
+
+      while (open.length) {
+        open.sort((x, y) => heuristics[x] - heuristics[y]);
+        const cur = open.shift();
+        if (visited.has(cur)) continue;
+        visited.add(cur);
+        expansion.push(cur);
+        if (cur === 'G') break;
+
+        for (const next of graph[cur]) {
+          if (!visited.has(next.to)) {
+            if (!(next.to in parent)) parent[next.to] = cur;
+            open.push(next.to);
+          }
+        }
+      }
+
+      return { expansion, path: reconstruct(parent, 'G') };
+    }
+
+    function aStar() {
+      const open = [{ node: 'A', f: heuristics.A }];
+      const gScore = { A: 0 };
+      const parent = { A: null };
+      const closed = new Set();
+      const expansion = [];
+
+      while (open.length) {
+        open.sort((a, b) => a.f - b.f);
+        const current = open.shift().node;
+        if (closed.has(current)) continue;
+
+        closed.add(current);
+        expansion.push(current);
+        if (current === 'G') break;
+
+        for (const edge of graph[current]) {
+          const tentative = gScore[current] + edge.w;
+          if (!(edge.to in gScore) || tentative < gScore[edge.to]) {
+            gScore[edge.to] = tentative;
+            parent[edge.to] = current;
+            open.push({ node: edge.to, f: tentative + heuristics[edge.to] });
+          }
+        }
+      }
+
+      return { expansion, path: reconstruct(parent, 'G') };
+    }
+
+    async function run(type) {
+      resetGraph();
+      const data = type === 'greedy' ? greedy() : aStar();
+      await animateVisit(data.expansion);
+      markPath(data.path);
+      const c = costOf(data.path);
+      result.textContent = `${type === 'greedy' ? 'Greedy' : 'A*'} expansion: ${data.expansion.join(' -> ')} | Path: ${data.path.join(' -> ')} | Cost: ${c}`;
+    }
+
+    const treeHeuristics = { S: 6, A: 1, B: 4, C: 2, G: 0 };
+    const treeGraph = {
+      S: [{ to: 'A', w: 1 }, { to: 'B', w: 2 }],
+      A: [{ to: 'G', w: 12 }],
+      B: [{ to: 'C', w: 2 }],
+      C: [{ to: 'G', w: 2 }],
+      G: []
+    };
+
+    function resetTree(prefix) {
+      document.querySelectorAll(`[id^="${prefix}n-"]`).forEach(n => n.classList.remove('visited', 'path'));
+      document.querySelectorAll(`[id^="${prefix}-"]`).forEach(e => e.classList.remove('path'));
+    }
+
+    function treeReconstruct(parent, goal) {
+      const out = [];
+      let cur = goal;
+      while (cur) {
+        out.push(cur);
+        cur = parent[cur];
+      }
+      return out.reverse();
+    }
+
+    function treeCost(path) {
+      let c = 0;
+      for (let i = 0; i < path.length - 1; i++) {
+        const edge = treeGraph[path[i]].find(e => e.to === path[i + 1]);
+        if (edge) c += edge.w;
+      }
+      return c;
+    }
+
+    async function animateTree(prefix, expansion) {
+      for (const n of expansion) {
+        document.getElementById(`${prefix}n-${n}`)?.classList.add('visited');
+        await sleep(320);
+      }
+    }
+
+    function markTreePath(prefix, path) {
+      path.forEach(n => document.getElementById(`${prefix}n-${n}`)?.classList.add('path'));
+      for (let i = 0; i < path.length - 1; i++) {
+        document.getElementById(`${prefix}-${path[i]}${path[i + 1]}`)?.classList.add('path');
+      }
+    }
+
+    function solveTreeGreedy() {
+      const open = ['S'];
+      const visited = new Set();
+      const parent = { S: null };
+      const expansion = [];
+
+      while (open.length) {
+        open.sort((x, y) => treeHeuristics[x] - treeHeuristics[y]);
+        const cur = open.shift();
+        if (visited.has(cur)) continue;
+        visited.add(cur);
+        expansion.push(cur);
+        if (cur === 'G') break;
+
+        for (const next of treeGraph[cur]) {
+          if (!visited.has(next.to)) {
+            if (!(next.to in parent)) parent[next.to] = cur;
+            open.push(next.to);
+          }
+        }
+      }
+      return { expansion, path: treeReconstruct(parent, 'G') };
+    }
+
+    function solveTreeAStar() {
+      const open = [{ node: 'S', f: treeHeuristics.S }];
+      const gScore = { S: 0 };
+      const parent = { S: null };
+      const closed = new Set();
+      const expansion = [];
+
+      while (open.length) {
+        open.sort((a, b) => a.f - b.f);
+        const cur = open.shift().node;
+        if (closed.has(cur)) continue;
+
+        closed.add(cur);
+        expansion.push(cur);
+        if (cur === 'G') break;
+
+        for (const edge of treeGraph[cur]) {
+          const tentative = gScore[cur] + edge.w;
+          if (!(edge.to in gScore) || tentative < gScore[edge.to]) {
+            gScore[edge.to] = tentative;
+            parent[edge.to] = cur;
+            open.push({ node: edge.to, f: tentative + treeHeuristics[edge.to] });
+          }
+        }
+      }
+      return { expansion, path: treeReconstruct(parent, 'G') };
+    }
+
+    async function runTree(prefix, type, outId) {
+      resetTree(prefix);
+      const data = type === 'greedy' ? solveTreeGreedy() : solveTreeAStar();
+      await animateTree(prefix, data.expansion);
+      markTreePath(prefix, data.path);
+      const cost = treeCost(data.path);
+      const name = type === 'greedy' ? 'Greedy' : 'A*';
+      document.getElementById(outId).textContent = `${name} expansion: ${data.expansion.join(' -> ')} | Path: ${data.path.join(' -> ')} | Cost: ${cost}`;
+    }
+
+    document.getElementById('runGreedy').addEventListener('click', () => run('greedy'));
+    document.getElementById('runAStar').addEventListener('click', () => run('astar'));
+    document.getElementById('reset').addEventListener('click', resetGraph);
+    document.getElementById('runTreeGreedy').addEventListener('click', () => runTree('t1', 'greedy', 'treeGreedyResult'));
+    document.getElementById('clearTreeGreedy').addEventListener('click', () => {
+      resetTree('t1');
+      document.getElementById('treeGreedyResult').textContent = 'Run animation to compare decision quality.';
+    });
+    document.getElementById('runTreeAStar').addEventListener('click', () => runTree('t2', 'astar', 'treeAStarResult'));
+    document.getElementById('clearTreeAStar').addEventListener('click', () => {
+      resetTree('t2');
+      document.getElementById('treeAStarResult').textContent = 'Run animation to see optimal path choice.';
+    });
+  </script>
+</body>
+</html>

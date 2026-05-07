@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Linear Regression — Least Squares Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --glass-bg: rgba(15, 23, 42, 0.65);
+      --glass-border: rgba(148, 163, 184, 0.12);
+      --accent: #38bdf8;
+      --accent2: #818cf8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(ellipse at 20% 10%, #0c1a3a 0%, #020617 55%, #0a0f1e 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+    }
+
+    /* Subtle animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrapper { position: relative; z-index: 1; }
+
+    .glass {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .section-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: 0.35rem;
+    }
+
+    .section-heading {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+
+    /* SVG Graph */
+    .graph-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .graph-svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 720px;
+      width: 100%;
+    }
+
+    .axis-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      fill: #94a3b8;
+      font-weight: 500;
+    }
+
+    .tick-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      fill: #64748b;
+    }
+
+    .grid-line { stroke: rgba(148,163,184,0.08); stroke-width: 1; }
+    .axis-line { stroke: rgba(148,163,184,0.3); stroke-width: 1.5; }
+
+    .data-point-ring {
+      fill: none;
+      stroke: #38bdf8;
+      stroke-width: 2;
+      opacity: 0.5;
+    }
+
+    .data-point-core {
+      fill: #38bdf8;
+      filter: drop-shadow(0 0 6px rgba(56,189,248,0.8));
+    }
+
+    .regression-line {
+      stroke: url(#lineGrad);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      fill: none;
+      filter: drop-shadow(0 0 4px rgba(56,189,248,0.5));
+    }
+
+    .point-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      fill: #bae6fd;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .math-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .math-table th {
+      background: rgba(56,189,248,0.1);
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 10px 14px;
+      text-align: center;
+      border-bottom: 1px solid rgba(56,189,248,0.2);
+      letter-spacing: 0.05em;
+    }
+
+    .math-table th:first-child { border-radius: 8px 0 0 0; }
+    .math-table th:last-child  { border-radius: 0 8px 0 0; }
+
+    .math-table td {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      padding: 9px 14px;
+      text-align: center;
+      border-bottom: 1px solid rgba(148,163,184,0.07);
+      transition: background 0.15s;
+    }
+
+    .math-table tr:hover td { background: rgba(56,189,248,0.04); }
+
+    .math-table .sigma-row td {
+      background: rgba(129,140,248,0.08);
+      color: #a5b4fc;
+      font-weight: 700;
+      border-top: 1px solid rgba(129,140,248,0.25);
+      border-bottom: none;
+    }
+
+    .math-table .sigma-row td:first-child { border-radius: 0 0 0 8px; }
+    .math-table .sigma-row td:last-child  { border-radius: 0 0 8px 0; }
+
+    /* Formula blocks */
+    .formula-box {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(56,189,248,0.15);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      color: #e2e8f0;
+      font-size: 0.88rem;
+      line-height: 1.9;
+    }
+
+    .formula-highlight { color: #38bdf8; font-weight: 700; }
+    .formula-result    { color: #4ade80; font-weight: 700; }
+    .formula-note      { color: #94a3b8; font-size: 0.78rem; }
+
+    /* Step boxes */
+    .step-box {
+      background: rgba(0,0,0,0.25);
+      border-left: 3px solid #38bdf8;
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.85rem 1.1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      color: #cbd5e1;
+      line-height: 1.85;
+    }
+
+    .step-box.purple { border-left-color: #818cf8; }
+    .step-box.green  { border-left-color: #4ade80; }
+
+    .eq-final {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #4ade80;
+      text-align: center;
+      padding: 1rem;
+      background: rgba(74,222,128,0.06);
+      border: 1px solid rgba(74,222,128,0.2);
+      border-radius: 0.75rem;
+      letter-spacing: 0.05em;
+      filter: drop-shadow(0 0 10px rgba(74,222,128,0.2));
+    }
+
+    /* Callout / note */
+    .callout {
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      font-size: 0.84rem;
+      color: #fde68a;
+      line-height: 1.7;
+    }
+
+    .callout strong { color: #fbbf24; }
+
+    /* Predictor */
+    .predictor-input {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(56,189,248,0.25);
+      border-radius: 0.6rem;
+      color: #f1f5f9;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      padding: 0.6rem 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 130px;
+    }
+
+    .predictor-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.15);
+    }
+
+    .predict-btn {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      border: none;
+      border-radius: 0.6rem;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.65rem 1.5rem;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(14,165,233,0.3);
+    }
+
+    .predict-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(14,165,233,0.4);
+    }
+
+    .predict-btn:active { transform: translateY(0); }
+
+    .result-box {
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      color: #4ade80;
+      background: rgba(74,222,128,0.07);
+      border: 1px solid rgba(74,222,128,0.2);
+      border-radius: 0.6rem;
+      padding: 0.75rem 1.1rem;
+      margin-top: 1rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-box.error {
+      color: #f87171;
+      background: rgba(248,113,113,0.07);
+      border-color: rgba(248,113,113,0.2);
+    }
+
+    @keyframes fadeIn {
+      from { opacity:0; transform: translateY(4px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .badge-blue   { background: rgba(56,189,248,0.15); color: #38bdf8; }
+    .badge-purple { background: rgba(129,140,248,0.15); color: #a5b4fc; }
+    .badge-green  { background: rgba(74,222,128,0.15);  color: #4ade80; }
+    .badge-amber  { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper max-w-4xl mx-auto px-4 py-10 space-y-8">
+
+  <!-- ── HEADER ── -->
+  <div class="text-center space-y-2 pb-2">
+    <div class="flex justify-center gap-2 flex-wrap">
+      <span class="badge badge-blue">AI &amp; Neural Networks</span>
+      <span class="badge badge-purple">Lab 4</span>
+      <span class="badge badge-amber">Interactive Simulator</span>
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight pt-1">
+      Linear Regression
+    </h1>
+    <p class="text-slate-400 text-base font-medium">Least Squares Method &mdash; Visual &amp; Mathematical Walkthrough</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1 — GRAPH                                           -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="glass p-6 space-y-4">
+    <div>
+      <p class="section-title">Section 01</p>
+      <h2 class="section-heading">Data Scatter &amp; Regression Line</h2>
+      <p class="text-slate-400 text-sm mt-1">
+        Four observations plotted on the axes. The <span class="text-sky-400 font-semibold">blue line</span>
+        is the best-fit line derived by the Least Squares method.
+      </p>
+    </div>
+
+    <div class="graph-container">
+      <!--
+        Plot area:  left=72  top=24  right=700  bottom=352
+        Plot width: 628   Plot height: 328
+        X range: 0–10    Y range: 0–100
+        xPx(v) = 72 + (v/10)*628
+        yPx(v) = 352 - (v/100)*328
+      -->
+      <svg class="graph-svg" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#6366f1"/>
+            <stop offset="100%" stop-color="#38bdf8"/>
+          </linearGradient>
+          <filter id="ptGlow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Horizontal grid lines — Y = 0,10,20,...,100 -->
+        <!-- yPx: 352,319.2,286.4,253.6,220.8,188,155.2,122.4,89.6,56.8,24 -->
+        <g class="grid-line">
+          <line x1="72" y1="352"   x2="700" y2="352"/>
+          <line x1="72" y1="319.2" x2="700" y2="319.2"/>
+          <line x1="72" y1="286.4" x2="700" y2="286.4"/>
+          <line x1="72" y1="253.6" x2="700" y2="253.6"/>
+          <line x1="72" y1="220.8" x2="700" y2="220.8"/>
+          <line x1="72" y1="188"   x2="700" y2="188"/>
+          <line x1="72" y1="155.2" x2="700" y2="155.2"/>
+          <line x1="72" y1="122.4" x2="700" y2="122.4"/>
+          <line x1="72" y1="89.6"  x2="700" y2="89.6"/>
+          <line x1="72" y1="56.8"  x2="700" y2="56.8"/>
+          <line x1="72" y1="24"    x2="700" y2="24"/>
+        </g>
+
+        <!-- Vertical grid lines — X = 0,1,...,10 -->
+        <!-- xPx: 72,134.8,197.6,260.4,323.2,386,448.8,511.6,574.4,637.2,700 -->
+        <g class="grid-line">
+          <line x1="72"    y1="24" x2="72"    y2="352"/>
+          <line x1="134.8" y1="24" x2="134.8" y2="352"/>
+          <line x1="197.6" y1="24" x2="197.6" y2="352"/>
+          <line x1="260.4" y1="24" x2="260.4" y2="352"/>
+          <line x1="323.2" y1="24" x2="323.2" y2="352"/>
+          <line x1="386"   y1="24" x2="386"   y2="352"/>
+          <line x1="448.8" y1="24" x2="448.8" y2="352"/>
+          <line x1="511.6" y1="24" x2="511.6" y2="352"/>
+          <line x1="574.4" y1="24" x2="574.4" y2="352"/>
+          <line x1="637.2" y1="24" x2="637.2" y2="352"/>
+          <line x1="700"   y1="24" x2="700"   y2="352"/>
+        </g>
+
+        <!-- Axes -->
+        <line class="axis-line" x1="72" y1="352" x2="700" y2="352"/>
+        <line class="axis-line" x1="72" y1="24"  x2="72"  y2="352"/>
+
+        <!-- Arrowheads -->
+        <polygon points="704,352 697,348 697,356" fill="rgba(148,163,184,0.4)"/>
+        <polygon points="72,20 68,27 76,27"       fill="rgba(148,163,184,0.4)"/>
+
+        <!-- X tick marks & labels: 0, 5, 10 -->
+        <line stroke="rgba(148,163,184,0.4)" stroke-width="1.5" x1="72"  y1="352" x2="72"  y2="359"/>
+        <line stroke="rgba(148,163,184,0.4)" stroke-width="1.5" x1="386" y1="352" x2="386" y2="359"/>
+        <line stroke="rgba(148,163,184,0.4)" stroke-width="1.5" x1="700" y1="352" x2="700" y2="359"/>
+        <text class="tick-label" x="72"  y="372" text-anchor="middle">0</text>
+        <text class="tick-label" x="386" y="372" text-anchor="middle">5</text>
+        <text class="tick-label" x="700" y="372" text-anchor="middle">10</text>
+
+        <!-- Y tick marks & labels: 0, 50, 100 -->
+        <line stroke="rgba(148,163,184,0.4)" stroke-width="1.5" x1="72" y1="352" x2="65" y2="352"/>
+        <line stroke="rgba(148,163,184,0.4)" stroke-width="1.5" x1="72" y1="188" x2="65" y2="188"/>
+        <line stroke="rgba(148,163,184,0.4)" stroke-width="1.5" x1="72" y1="24"  x2="65" y2="24"/>
+        <text class="tick-label" x="62" y="356" text-anchor="end">0</text>
+        <text class="tick-label" x="62" y="192" text-anchor="end">50</text>
+        <text class="tick-label" x="62" y="28"  text-anchor="end">100</text>
+
+        <!-- Axis labels -->
+        <text class="axis-label" x="386" y="393" text-anchor="middle" font-weight="600">Study Hours (X)</text>
+        <text class="axis-label" x="-188" y="18" text-anchor="middle" font-weight="600"
+              transform="rotate(-90)">Exam Score % (Y)</text>
+
+        <!--
+          Regression line: y = 8x + 5
+          x=0  → y=5   → xPx=72,    yPx=352-16.4=335.6
+          x=10 → y=85  → xPx=700,   yPx=352-278.8=73.2
+        -->
+        <line class="regression-line" x1="72" y1="335.6" x2="700" y2="73.2"/>
+
+        <!-- Equation label on line -->
+        <text font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700"
+              fill="#38bdf8" x="540" y="88" opacity="0.9">&#375; = 8x + 5</text>
+
+        <!--
+          Data points (xPx, yPx):
+          (2,20) → (197.6, 286.4)
+          (4,40) → (323.2, 220.8)
+          (6,50) → (448.8, 188)
+          (8,70) → (574.4, 122.4)
+        -->
+        <!-- Point (2,20) -->
+        <circle cx="197.6" cy="286.4" r="11" class="data-point-ring"/>
+        <circle cx="197.6" cy="286.4" r="5"  class="data-point-core" filter="url(#ptGlow)"/>
+        <text class="point-label" x="209" y="279">(2, 20)</text>
+
+        <!-- Point (4,40) -->
+        <circle cx="323.2" cy="220.8" r="11" class="data-point-ring"/>
+        <circle cx="323.2" cy="220.8" r="5"  class="data-point-core" filter="url(#ptGlow)"/>
+        <text class="point-label" x="335" y="213">(4, 40)</text>
+
+        <!-- Point (6,50) -->
+        <circle cx="448.8" cy="188" r="11" class="data-point-ring"/>
+        <circle cx="448.8" cy="188" r="5"  class="data-point-core" filter="url(#ptGlow)"/>
+        <text class="point-label" x="460" y="180">(6, 50)</text>
+
+        <!-- Point (8,70) -->
+        <circle cx="574.4" cy="122.4" r="11" class="data-point-ring"/>
+        <circle cx="574.4" cy="122.4" r="5"  class="data-point-core" filter="url(#ptGlow)"/>
+        <text class="point-label" x="586" y="115">(8, 70)</text>
+
+        <!-- Legend -->
+        <rect x="82" y="34" width="186" height="52" rx="7"
+              fill="rgba(0,0,0,0.5)" stroke="rgba(148,163,184,0.12)" stroke-width="1"/>
+        <circle cx="100" cy="53"  r="5" fill="#38bdf8" filter="url(#ptGlow)"/>
+        <text font-family="Inter,sans-serif" font-size="11" fill="#94a3b8" x="113" y="57">Observed Data Points</text>
+        <line x1="90" y1="70" x2="114" y2="70" stroke="url(#lineGrad)" stroke-width="2.5" stroke-linecap="round"/>
+        <text font-family="Inter,sans-serif" font-size="11" fill="#94a3b8" x="120" y="74">Regression Line</text>
+      </svg>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2 — MATHEMATICAL LEDGER                             -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="glass p-6 space-y-4">
+    <div>
+      <p class="section-title">Section 02</p>
+      <h2 class="section-heading">Mathematical Ledger</h2>
+      <p class="text-slate-400 text-sm mt-1">
+        Every quantity needed for the Least Squares formulas, computed row-by-row.
+      </p>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-slate-700/30">
+      <table class="math-table">
+        <thead>
+          <tr>
+            <th>Point #</th>
+            <th>x</th>
+            <th>y</th>
+            <th>x&sup2;</th>
+            <th>xy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-slate-500 text-xs">&nbsp;&#9312;&nbsp;(2, 20)</td>
+            <td>2</td>
+            <td>20</td>
+            <td>2&sup2; = <span style="color:#38bdf8">4</span></td>
+            <td>2 &times; 20 = <span style="color:#38bdf8">40</span></td>
+          </tr>
+          <tr>
+            <td class="text-slate-500 text-xs">&nbsp;&#9313;&nbsp;(4, 40)</td>
+            <td>4</td>
+            <td>40</td>
+            <td>4&sup2; = <span style="color:#38bdf8">16</span></td>
+            <td>4 &times; 40 = <span style="color:#38bdf8">160</span></td>
+          </tr>
+          <tr>
+            <td class="text-slate-500 text-xs">&nbsp;&#9314;&nbsp;(6, 50)</td>
+            <td>6</td>
+            <td>50</td>
+            <td>6&sup2; = <span style="color:#38bdf8">36</span></td>
+            <td>6 &times; 50 = <span style="color:#38bdf8">300</span></td>
+          </tr>
+          <tr>
+            <td class="text-slate-500 text-xs">&nbsp;&#9315;&nbsp;(8, 70)</td>
+            <td>8</td>
+            <td>70</td>
+            <td>8&sup2; = <span style="color:#38bdf8">64</span></td>
+            <td>8 &times; 70 = <span style="color:#38bdf8">560</span></td>
+          </tr>
+          <tr class="sigma-row">
+            <td>&Sigma; &nbsp;(n = 4)</td>
+            <td>&Sigma;x = 20</td>
+            <td>&Sigma;y = 180</td>
+            <td>&Sigma;x&sup2; = 120</td>
+            <td>&Sigma;xy = 1060</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summation cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+      <div class="formula-box text-center py-3">
+        <div class="text-slate-500 text-xs mb-1">&Sigma;x</div>
+        <div class="formula-highlight text-lg">20</div>
+        <div class="formula-note">2+4+6+8</div>
+      </div>
+      <div class="formula-box text-center py-3">
+        <div class="text-slate-500 text-xs mb-1">&Sigma;y</div>
+        <div class="formula-highlight text-lg">180</div>
+        <div class="formula-note">20+40+50+70</div>
+      </div>
+      <div class="formula-box text-center py-3">
+        <div class="text-slate-500 text-xs mb-1">&Sigma;x&sup2;</div>
+        <div class="formula-highlight text-lg">120</div>
+        <div class="formula-note">4+16+36+64</div>
+      </div>
+      <div class="formula-box text-center py-3">
+        <div class="text-slate-500 text-xs mb-1">&Sigma;xy</div>
+        <div class="formula-highlight text-lg">1060</div>
+        <div class="formula-note">40+160+300+560</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3 — FORMULA BREAKDOWN                               -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="glass p-6 space-y-5">
+    <div>
+      <p class="section-title">Section 03</p>
+      <h2 class="section-heading">Formula Breakdown</h2>
+      <p class="text-slate-400 text-sm mt-1">
+        The two core Least Squares formulas &mdash; slope <em>m</em> and intercept <em>c</em>.
+      </p>
+    </div>
+
+    <!-- Slope formula -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-blue">Slope</span>
+        <span class="text-sky-400 font-bold font-mono text-sm">m</span>
+      </div>
+      <div class="formula-box">
+        <div class="text-slate-500 text-xs mb-2">// Least Squares slope formula</div>
+        <span class="formula-highlight">m</span>  =
+          &nbsp;[ n(&Sigma;xy) &minus; (&Sigma;x)(&Sigma;y) ]
+          <span class="text-slate-600">&nbsp;&larr; numerator</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ n(&Sigma;x&sup2;) &minus; (&Sigma;x)&sup2; ]
+          <span class="text-slate-600">&nbsp;&larr; denominator</span>
+      </div>
+    </div>
+
+    <!-- Intercept formula -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-purple">Intercept</span>
+        <span class="text-indigo-400 font-bold font-mono text-sm">c</span>
+      </div>
+      <div class="formula-box">
+        <div class="text-slate-500 text-xs mb-2">// Y-intercept formula</div>
+        <span class="formula-highlight">c</span>  =
+          &nbsp;[ &Sigma;y &minus; m(&Sigma;x) ] &divide; n
+      </div>
+    </div>
+
+    <!-- Why Least Squares callout -->
+    <div class="callout">
+      <strong>&#9888; Why not just use (y&#8322;&minus;y&#8321;) / (x&#8322;&minus;x&#8321;)?</strong><br>
+      The basic two-point slope formula works perfectly when you have exactly <em>two</em> points &mdash;
+      it computes the slope of the unique line through them. But with <em>multiple</em> data points,
+      no single line can pass through all of them simultaneously. Each pair gives a <em>different</em>
+      slope estimate, so you would need to pick one arbitrarily.<br><br>
+      The <strong>Least Squares</strong> method avoids this by finding the one line that
+      <em>minimises the sum of squared vertical errors</em>
+      &mdash; &Sigma;(y&sub;i; &minus; &ycirc;&sub;i;)&sup2; &mdash; across <em>all</em> points at once,
+      giving an objectively best-fit model rather than an arbitrary pick.
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 4 — STEP-BY-STEP CALCULATION                        -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="glass p-6 space-y-6">
+    <div>
+      <p class="section-title">Section 04</p>
+      <h2 class="section-heading">Step-by-Step Calculation</h2>
+      <p class="text-slate-400 text-sm mt-1">
+        Substituting the summation values into each formula, one arithmetic step at a time.
+      </p>
+    </div>
+
+    <!-- Step 1: Slope -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-blue">Step 1</span>
+        <span class="text-sky-300 font-semibold text-sm">Calculate Slope (m)</span>
+      </div>
+      <div class="step-box">
+        <div>m &nbsp;= [ n&middot;(&Sigma;xy) &minus; (&Sigma;x)&middot;(&Sigma;y) ] &divide; [ n&middot;(&Sigma;x&sup2;) &minus; (&Sigma;x)&sup2; ]</div>
+        <div class="text-slate-500">&nbsp;&nbsp;&nbsp;// Substitute: n=4, &Sigma;xy=1060, &Sigma;x=20, &Sigma;y=180, &Sigma;x&sup2;=120</div>
+        <div>m &nbsp;= [ 4 &times; 1060 &minus; 20 &times; 180 ] &divide; [ 4 &times; 120 &minus; 20&sup2; ]</div>
+        <div>m &nbsp;= [ 4240 &minus; 3600 ] &divide; [ 480 &minus; 400 ]</div>
+        <div>m &nbsp;= <span style="color:#38bdf8">640</span> &divide; <span style="color:#38bdf8">80</span></div>
+        <div class="font-bold text-sky-300 text-base mt-1">m = 8</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Intercept -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-purple">Step 2</span>
+        <span class="text-indigo-300 font-semibold text-sm">Calculate Intercept (c)</span>
+      </div>
+      <div class="step-box purple">
+        <div>c &nbsp;= [ &Sigma;y &minus; m&middot;(&Sigma;x) ] &divide; n</div>
+        <div class="text-slate-500">&nbsp;&nbsp;&nbsp;// Substitute: &Sigma;y=180, m=8, &Sigma;x=20, n=4</div>
+        <div>c &nbsp;= [ 180 &minus; 8 &times; 20 ] &divide; 4</div>
+        <div>c &nbsp;= [ 180 &minus; 160 ] &divide; 4</div>
+        <div>c &nbsp;= <span style="color:#a5b4fc">20</span> &divide; <span style="color:#a5b4fc">4</span></div>
+        <div class="font-bold text-indigo-300 text-base mt-1">c = 5</div>
+      </div>
+    </div>
+
+    <!-- Step 3: Final equation -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-green">Step 3</span>
+        <span class="text-green-300 font-semibold text-sm">Write the Regression Equation</span>
+      </div>
+      <div class="step-box green text-slate-400 text-sm mb-2">
+        Substitute m = 8 and c = 5 into &nbsp;<span class="text-slate-300">&ycirc; = mx + c</span>
+      </div>
+      <div class="eq-final">&ycirc; &nbsp;= &nbsp;8x &nbsp;+ &nbsp;5</div>
+    </div>
+
+    <!-- Verification -->
+    <div class="formula-box text-xs text-slate-400 leading-7">
+      <div class="text-slate-500 mb-1">// Verify predictions against original data:</div>
+      <div>x=2 &nbsp;&rarr;&nbsp; &ycirc; = 8(2)+5 = <span style="color:#4ade80">21</span> &nbsp;(observed 20 &nbsp;&middot;&nbsp; residual = +1)</div>
+      <div>x=4 &nbsp;&rarr;&nbsp; &ycirc; = 8(4)+5 = <span style="color:#4ade80">37</span> &nbsp;(observed 40 &nbsp;&middot;&nbsp; residual = &minus;3)</div>
+      <div>x=6 &nbsp;&rarr;&nbsp; &ycirc; = 8(6)+5 = <span style="color:#4ade80">53</span> &nbsp;(observed 50 &nbsp;&middot;&nbsp; residual = +3)</div>
+      <div>x=8 &nbsp;&rarr;&nbsp; &ycirc; = 8(8)+5 = <span style="color:#4ade80">69</span> &nbsp;(observed 70 &nbsp;&middot;&nbsp; residual = &minus;1)</div>
+      <div class="text-slate-500 mt-1">// Sum of residuals = 0 &check; &mdash; errors balanced on both sides of the line.</div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 5 — INTERACTIVE PREDICTOR                           -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="glass p-6 space-y-4">
+    <div>
+      <p class="section-title">Section 05</p>
+      <h2 class="section-heading">Interactive Score Predictor</h2>
+      <p class="text-slate-400 text-sm mt-1">
+        Enter any number of study hours to instantly predict the expected exam score
+        using <strong class="text-sky-300">&ycirc; = 8x + 5</strong>.
+      </p>
+    </div>
+
+    <div class="formula-box text-sm text-slate-400">
+      <span class="text-slate-500">// Model in use: &nbsp;</span>
+      &ycirc; &nbsp;=&nbsp; <span class="formula-highlight">8</span>&nbsp;&times;&nbsp;x
+      &nbsp;+&nbsp; <span class="formula-highlight">5</span>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-slate-400 text-xs font-semibold tracking-widest uppercase">
+          Study Hours (x)
+        </label>
+        <input
+          id="hoursInput"
+          type="number"
+          class="predictor-input"
+          placeholder="e.g.&nbsp;7"
+          min="0"
+          max="100"
+          step="0.5"
+        />
+      </div>
+      <button class="predict-btn" onclick="predict()">
+        &#9654;&nbsp; Predict Score
+      </button>
+    </div>
+
+    <div id="resultBox" class="result-box"></div>
+
+    <p class="text-slate-600 text-xs">
+      Note: This model is trained on x&nbsp;=&nbsp;2&ndash;8. Predictions outside this range
+      are extrapolations and may be less reliable in real-world contexts.
+    </p>
+  </div>
+
+
+  <!-- ── FOOTER ── -->
+  <div class="text-center text-slate-600 text-xs pb-4 space-y-1">
+    <p>Linear Regression &middot; Least Squares Method &middot; Lab 4 &nbsp;|&nbsp; AI &amp; Neural Networks</p>
+    <p>Dataset: (2,20) &middot; (4,40) &middot; (6,50) &middot; (8,70) &nbsp;&rarr;&nbsp; &ycirc; = 8x + 5</p>
+  </div>
+
+</div><!-- /page-wrapper -->
+
+
+<script>
+  function predict() {
+    const input  = document.getElementById('hoursInput');
+    const box    = document.getElementById('resultBox');
+    const raw    = input.value.trim();
+    const x      = parseFloat(raw);
+
+    // Reset animation
+    box.style.display = 'none';
+    void box.offsetWidth; // reflow
+    box.style.display = 'block';
+    box.className = 'result-box';
+
+    if (raw === '' || isNaN(x)) {
+      box.classList.add('error');
+      box.textContent = '⚠  Please enter a valid number of study hours.';
+      return;
+    }
+
+    if (x < 0) {
+      box.classList.add('error');
+      box.textContent = '⚠  Study hours cannot be negative.';
+      return;
+    }
+
+    const y      = 8 * x + 5;
+    const shown  = Math.min(y, 100).toFixed(1);
+
+    let warnings = [];
+    if (x < 2 || x > 8)  warnings.push('extrapolation — outside training range (x = 2–8)');
+    if (y > 100)          warnings.push('raw prediction ' + y.toFixed(1) + '% capped at 100%');
+
+    box.innerHTML =
+      `<span style="color:#94a3b8; font-size:0.8rem">` +
+        `ŷ = 8 × ${x} + 5` +
+      `</span><br>` +
+      `<span style="color:#4ade80; font-size:1.15rem; font-weight:700">` +
+        `Predicted Exam Score: ${shown}%` +
+      `</span>` +
+      (warnings.length
+        ? `<br><span style="color:#fbbf24; font-size:0.75rem">⚠ ${warnings.join(' · ')}</span>`
+        : '');
+  }
+
+  document.getElementById('hoursInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') predict();
+  });
+</script>
+
+</body>
+</html>

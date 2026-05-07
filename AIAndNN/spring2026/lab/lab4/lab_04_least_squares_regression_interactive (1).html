@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Lab 04 - Gradient Descent Interactive</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:'Poppins',sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+min-height:100vh;
+overflow-x:hidden;
+}
+.container{max-width:1200px;margin:auto;padding:20px}
+.header{text-align:center;padding:30px;animation:fadeDown 1s ease}
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+border-radius:20px;
+padding:25px;
+margin-bottom:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.3);
+animation:fadeUp 1s ease
+}
+.controls{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px
+}
+input,select{
+width:100%;padding:10px;border:none;border-radius:10px;margin-top:5px
+}
+button{
+padding:12px;border:none;border-radius:12px;
+background:linear-gradient(45deg,#00c6ff,#0072ff);
+color:white;font-weight:600;cursor:pointer;transition:.3s
+}
+button:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,0,0,.4)}
+canvas{background:white;border-radius:15px;padding:10px;margin-top:20px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+
+.bg-anim{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1}
+.bg-anim span{
+position:absolute;width:20px;height:20px;
+background:rgba(255,255,255,0.08);
+border-radius:50%;
+animation:float 20s linear infinite
+}
+@keyframes float{
+0%{transform:translateY(0);opacity:0}
+50%{opacity:1}
+100%{transform:translateY(-1000px);opacity:0}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-anim" id="bg"></div>
+
+<div class="container">
+<div class="header">
+<h1>AI Lab 04 - Gradient Descent Interactive</h1>
+<p>Least Squares Regression Visualization</p>
+</div>
+
+<div class="card">
+<h2>Theory</h2>
+<p>Linear Regression Model: y = θ₀ + θ₁x</p>
+<p>Gradient Descent minimizes loss by updating parameters iteratively.</p>
+</div>
+
+<div class="card">
+<h2>Controls</h2>
+<div class="controls">
+<div>
+<label>Learning Rate</label>
+<input type="number" id="alpha" value="0.01" step="0.001">
+</div>
+<div>
+<label>Iterations</label>
+<input type="number" id="iters" value="500">
+</div>
+<div>
+<label>Dataset</label>
+<select id="dataset">
+<option value="interest">Interest Rate</option>
+<option value="unemployment">Unemployment Rate</option>
+</select>
+</div>
+<div style="align-self:end">
+<button onclick="runGD()">Run Gradient Descent</button>
+</div>
+</div>
+
+<canvas id="lossChart"></canvas>
+<canvas id="regChart"></canvas>
+</div>
+</div>
+
+<script>
+// background animation
+const bg=document.getElementById('bg');
+for(let i=0;i<40;i++){
+let s=document.createElement('span');
+s.style.left=Math.random()*100+'%';
+s.style.animationDuration=(10+Math.random()*20)+'s';
+s.style.width=s.style.height=(5+Math.random()*20)+'px';
+bg.appendChild(s);
+}
+
+const interest=[2.75,2.5,2.5,2.5,2.5,2.5,2.5,2.25,2.25,2.25,2,2,2,1.75,1.75,1.75,1.75,1.75,1.75,1.75,1.75,1.75,1.75,1.75];
+const unemployment=[5.3,5.3,5.3,5.3,5.4,5.6,5.5,5.5,5.5,5.6,5.7,5.9,6,5.9,5.8,6.1,6.2,6.1,6.1,6.1,5.9,6.2,6.2,6.1];
+const stock=[1464,1394,1357,1293,1256,1254,1234,1195,1159,1167,1130,1075,1047,965,943,958,971,949,884,866,876,822,704,719];
+
+let lossChart,regChart;
+
+function runGD(){
+let alpha=parseFloat(document.getElementById('alpha').value);
+let iters=parseInt(document.getElementById('iters').value);
+let dataset=document.getElementById('dataset').value;
+
+let x=dataset==='interest'?interest:unemployment;
+let y=stock;
+
+let t0=10,t1=10;
+let m=x.length;
+let losses=[];
+
+for(let i=0;i<iters;i++){
+let preds=x.map(v=>t0+t1*v);
+let error=preds.map((p,i)=>p-y[i]);
+
+let sum0=error.reduce((a,b)=>a+b,0);
+let sum1=error.reduce((a,b,i)=>a+b*x[i],0);
+
+t0=t0-(alpha/m)*sum0;
+t1=t1-(alpha/m)*sum1;
+
+let loss=error.reduce((a,b)=>a+b*b,0)/(2*m);
+losses.push(loss);
+}
+
+plotLoss(losses);
+plotRegression(x,y,t0,t1);
+}
+
+function plotLoss(losses){
+if(lossChart) lossChart.destroy();
+lossChart=new Chart(document.getElementById('lossChart'),{
+type:'line',
+data:{labels:losses.map((_,i)=>i),datasets:[{label:'Loss',data:losses}]},
+options:{responsive:true}
+});
+}
+
+function plotRegression(x,y,t0,t1){
+if(regChart) regChart.destroy();
+let line=x.map(v=>t0+t1*v);
+regChart=new Chart(document.getElementById('regChart'),{
+type:'scatter',
+data:{datasets:[
+{label:'Data',data:x.map((v,i)=>({x:v,y:y[i]}))},
+{type:'line',label:'Regression Line',data:x.map((v,i)=>({x:v,y:line[i]}))}
+]},
+options:{responsive:true}
+});
+}
+</script>
+
+</body>
+</html>

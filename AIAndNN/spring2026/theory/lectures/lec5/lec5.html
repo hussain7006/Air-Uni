@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Search - Directional Arrow Trace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body {
+            background-color: #020206;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .node {
+            position: absolute;
+            z-index: 10;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .node-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: #0f172a;
+        }
+
+        .active-node {
+            background: #6366f1;
+            border-color: #818cf8;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.8);
+            transform: scale(1.1);
+            color: white;
+        }
+
+        .frontier-node {
+            border-color: #06b6d4;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+            border-style: dashed;
+        }
+
+        .edge-line {
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrow-gray);
+        }
+
+        .active-edge {
+            stroke: #6366f1;
+            stroke-width: 4;
+            stroke-dasharray: 0;
+            marker-end: url(#arrow-blue);
+            animation: draw 0.6s ease-out;
+        }
+
+        @keyframes draw {
+            from {
+                stroke-dashoffset: 100;
+                stroke-dasharray: 100;
+            }
+
+            to {
+                stroke-dashoffset: 0;
+                stroke-dasharray: 100;
+            }
+        }
+    </style>
+</head>
+
+<body class="p-6">
+
+    <div id="app" class="max-w-[1400px] mx-auto h-[90vh] flex flex-col">
+        <header class="mb-6 flex justify-between items-center glass p-6 rounded-[2rem]">
+            <div>
+                <h1
+                    class="text-3xl font-black bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent italic">
+                    DIRECTIONAL TRACE SOLUTION</h1>
+                <p class="text-[10px] text-slate-500 font-mono tracking-widest">Ensuring Arrow-based Navigation Only</p>
+            </div>
+            <div class="flex gap-4">
+                <button @click="switchAlgo('greedy')"
+                    :class="algo==='greedy'?'bg-indigo-600 border-indigo-400':'bg-white/5'"
+                    class="px-6 py-2 rounded-xl border border-white/10 text-xs font-bold transition-all">GREEDY</button>
+                <button @click="switchAlgo('astar')"
+                    :class="algo==='astar'?'bg-indigo-600 border-indigo-400':'bg-white/5'"
+                    class="px-6 py-2 rounded-xl border border-white/10 text-xs font-bold transition-all">A*
+                    SEARCH</button>
+            </div>
+        </header>
+
+        <div class="grid lg:grid-cols-12 gap-6 flex-grow">
+            <div class="lg:col-span-8 glass rounded-[3rem] relative overflow-hidden" ref="canvas">
+                <svg class="absolute inset-0 w-full h-full">
+                    <defs>
+                        <marker id="arrow-gray" viewBox="0 0 10 10" refX="25" refY="5" markerWidth="4" markerHeight="4"
+                            orient="auto-start-reverse">
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.2)" />
+                        </marker>
+                        <marker id="arrow-blue" viewBox="0 0 10 10" refX="25" refY="5" markerWidth="5" markerHeight="5"
+                            orient="auto-start-reverse">
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#818cf8" />
+                        </marker>
+                    </defs>
+                    <g v-for="(edge, idx) in edges" :key="'edge-'+idx">
+                        <line :x1="nodes[edge.from].x" :y1="nodes[edge.from].y" :x2="nodes[edge.to].x"
+                            :y2="nodes[edge.to].y" class="edge-line" />
+                        <line v-if="isLineActive(edge)" :x1="nodes[edge.from].x" :y1="nodes[edge.from].y"
+                            :x2="nodes[edge.to].x" :y2="nodes[edge.to].y" class="active-edge" />
+                    </g>
+                </svg>
+
+                <div v-for="(node, idx) in nodes" :key="node.id" class="node"
+                    :style="{ left: node.x + 'px', top: node.y + 'px', transform: 'translate(-50%, -50%)' }">
+                    <div class="node-circle"
+                        :class="{'active-node': visited.includes(idx), 'frontier-node': isFrontier(idx)}">
+                        {{ node.id }}
+                    </div>
+                    <div class="mt-2 text-center text-[10px] font-mono leading-tight">
+                        <div class="text-cyan-400">h:{{ node.h }}</div>
+                        <div v-if="algo==='astar'" class="text-orange-400">g:{{ node.g }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                <div class="glass rounded-3xl p-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <button @click="prev"
+                            class="py-4 glass rounded-xl hover:bg-white/10 font-bold active:scale-95 transition-all">PREV</button>
+                        <button @click="next"
+                            class="py-4 bg-indigo-600 rounded-xl hover:bg-indigo-500 font-black shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">NEXT</button>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-6 flex-grow overflow-hidden flex flex-col">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Manual Trace Solution
+                    </h3>
+                    <div class="space-y-3 overflow-y-auto">
+                        <div v-for="(vIdx, i) in visited" :key="i"
+                            class="p-4 bg-white/5 rounded-2xl flex justify-between items-center border-l-4 border-indigo-500">
+                            <div>
+                                <span class="text-[10px] text-slate-500 uppercase block">Selected</span>
+                                <span class="text-xl font-black">{{ nodes[vIdx].id }}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-indigo-400 uppercase block">Score</span>
+                                <span class="text-lg font-mono">{{ getF(vIdx) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    algo: 'astar',
+                    visited: [0],
+                    nodes: [
+                        { id: 'S', x: 80, y: 80, h: 12, g: 0 },
+                        { id: 'A', x: 60, y: 300, h: 9, g: 5 },
+                        { id: 'B', x: 280, y: 250, h: 8, g: 8 },
+                        { id: 'C', x: 280, y: 120, h: 8.5, g: 10 },
+                        { id: 'D', x: 80, y: 550, h: 7.5, g: 15 },
+                        { id: 'E', x: 260, y: 520, h: 5, g: 18 },
+                        { id: 'F', x: 420, y: 380, h: 4.5, g: 22 },
+                        { id: 'H', x: 500, y: 110, h: 8.5, g: 18 },
+                        { id: 'I', x: 700, y: 60, h: 9, g: 25 },
+                        { id: 'J', x: 620, y: 180, h: 7.5, g: 24 },
+                        { id: 'K', x: 750, y: 380, h: 4, g: 28 },
+                        { id: 'L', x: 500, y: 620, h: 2, g: 25 },
+                        { id: 'G', x: 680, y: 680, h: 0, g: 30 }
+                    ],
+                    edges: [
+                        { from: 0, to: 1 }, { from: 0, to: 2 }, { from: 0, to: 3 },
+                        { from: 1, to: 4 }, { from: 4, to: 5 }, { from: 5, to: 6 },
+                        { from: 5, to: 11 }, { from: 3, to: 7 }, { from: 7, to: 8 },
+                        { from: 7, to: 9 }, { from: 9, to: 10 }, { from: 10, to: 12 },
+                        { from: 6, to: 11 }, { from: 11, to: 12 }
+                    ],
+                    // Hardcoded optimal solutions based on the graph in your image
+                    paths: {
+                        greedy: [0, 2], // Greedy is limited because B has no children in your graph
+                        astar: [0, 1, 4, 5, 11, 12]
+                    }
+                }
+            },
+            methods: {
+                next() {
+                    const p = this.paths[this.algo];
+                    if (this.visited.length < p.length) this.visited.push(p[this.visited.length]);
+                },
+                prev() { if (this.visited.length > 1) this.visited.pop(); },
+                switchAlgo(a) { this.algo = a; this.visited = [0]; },
+                getF(idx) {
+                    const n = this.nodes[idx];
+                    return this.algo === 'greedy' ? n.h : (n.g + n.h);
+                },
+                isLineActive(edge) {
+                    for (let i = 0; i < this.visited.length - 1; i++) {
+                        if (this.visited[i] === edge.from && this.visited[i + 1] === edge.to) return true;
+                    }
+                    return false;
+                },
+                isFrontier(idx) {
+                    if (this.visited.includes(idx)) return false;
+                    const lastVisited = this.visited[this.visited.length - 1];
+                    return this.edges.some(e => e.from === lastVisited && e.to === idx);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz & Solution Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .node {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border: 3px solid #1e3a8a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            z-index: 20;
+            position: absolute;
+            transition: all 0.4s;
+        }
+
+        .node.active {
+            background: #fbbf24;
+            border-color: #d97706;
+            transform: scale(1.1);
+        }
+
+        .node.visited {
+            background: #3b82f6;
+            border-color: #1d4ed8;
+            color: white;
+        }
+
+        .node.path-highlight {
+            background: #22c55e !important;
+            border-color: #15803d !important;
+            color: white !important;
+            box-shadow: 0 0 20px #22c55e;
+        }
+
+        .line-path {
+            stroke: #22c55e !important;
+            stroke-width: 6 !important;
+        }
+
+        .edge-label {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 800;
+            position: absolute;
+            z-index: 30;
+            border: 1px solid #ef4444;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .main-container {
+                width: 100% !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            .canvas-area {
+                border: 1px solid #000 !important;
+                height: 420px !important;
+                transform: scale(0.85);
+                transform-origin: top center;
+            }
+
+            .print-table {
+                display: table !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 10px;
+            }
+
+            .print-table th,
+            .print-table td {
+                border: 1px solid black !important;
+                padding: 6px !important;
+                font-size: 10px;
+            }
+
+            .header-print {
+                display: flex !important;
+                /* justify-content: center !important; */
+                align-items: center !important;
+                /* text-align: center !important; */
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body class="p-4">
+
+    <div class="max-w-7xl mx-auto space-y-4 main-container bg-white p-6 rounded-xl shadow-lg">
+
+        <div class="flex flex-wrap justify-between items-center border-b-2 border-blue-900 pb-4 mb-4 no-print gap-2">
+            <div class="flex justify-center items-center gap-3">
+                <img src="image.png" alt="Air University Logo" class="h-12 mb-1">
+                <div>
+                    <h1 class="text-xl font-black text-slate-900">AIR UNIVERSITY AI TOOL</h1>
+                    <p class="text-xs text-slate-500 font-bold uppercase">UCS Instructor Suite</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="solveStep()" id="solveBtn"
+                    class="bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700">Next
+                    Step</button>
+                <button onclick="preparePrint(false)"
+                    class="bg-slate-700 text-white px-3 py-2 rounded text-sm font-bold hover:bg-slate-800 italic">Download
+                    Quiz</button>
+                <button onclick="preparePrint(true)"
+                    class="bg-emerald-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-emerald-700 underline">Download
+                    Solution</button>
+                <button onclick="location.reload()"
+                    class="bg-slate-200 px-3 py-2 rounded text-sm font-bold">Reset</button>
+            </div>
+        </div>
+
+        <div class="hidden header-print border-b-2 border-black pb-2">
+            <div class="flex justify-center items-center gap-3">
+                <img src="image.png" alt="Air University Logo" class="h-12 mb-1">
+                <h1 class="text-xl font-bold uppercase">Air University, Karachi</h1>
+            </div>
+        </div>
+        <p id="print-type-label" class="text-md font-bold underline">
+            Use Uniform Cost Search (UCS) to find the path from node S to node G in the graph below. Show the steps,
+            traversing path and the shortest path with cost to reach the goal. </p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-7 bg-slate-50 rounded-xl relative overflow-hidden canvas-area h-[420px]">
+                <svg id="svg-canvas" class="w-full h-full">
+                    <defs>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="22" refY="5" orient="auto">
+                            <path d="M0,0 L0,10 L10,5 Z" fill="#333" />
+                        </marker>
+                    </defs>
+                    <line x1="350" y1="40" x2="180" y2="110" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-S-A" />
+                    <line x1="350" y1="40" x2="520" y2="110" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-S-B" />
+                    <line x1="180" y1="110" x2="100" y2="210" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-A-C" />
+                    <line x1="180" y1="110" x2="260" y2="210" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-A-D" />
+                    <line x1="520" y1="110" x2="440" y2="210" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-B-E" />
+                    <line x1="520" y1="110" x2="600" y2="210" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-B-F" />
+                    <line x1="440" y1="210" x2="350" y2="380" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-E-G" />
+                    <line x1="600" y1="210" x2="350" y2="380" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"
+                        id="line-F-G" />
+                </svg>
+                <div id="node-S" class="node" style="top: 20px; left: 327px;">S</div>
+                <div id="node-A" class="node" style="top: 90px; left: 157px;">A</div>
+                <div id="node-B" class="node" style="top: 90px; left: 497px;">B</div>
+                <div id="node-C" class="node" style="top: 190px; left: 77px;">C</div>
+                <div id="node-D" class="node" style="top: 190px; left: 237px;">D</div>
+                <div id="node-E" class="node" style="top: 190px; left: 417px;">E</div>
+                <div id="node-F" class="node" style="top: 190px; left: 577px;">F</div>
+                <div id="node-G" class="node" style="top: 360px; left: 327px; border: 3px double green;">G</div>
+
+                <div class="edge-label" style="top: 60px; left: 250px;">8</div>
+                <div class="edge-label" style="top: 60px; left: 430px;">3</div>
+                <div class="edge-label" style="top: 140px; left: 120px;">4</div>
+                <div class="edge-label" style="top: 140px; left: 210px;">10</div>
+                <div class="edge-label" style="top: 140px; left: 470px;">5</div>
+                <div class="edge-label" style="top: 140px; left: 550px;">12</div>
+                <div class="edge-label" style="top: 280px; left: 380px;">2</div>
+                <div class="edge-label" style="top: 280px; left: 480px;">1</div>
+            </div>
+
+            <div class="lg:col-span-5 bg-slate-900 rounded-xl p-4 text-white flex flex-col no-print h-[420px]">
+                <h3 class="font-bold text-blue-400 mb-2 border-b border-slate-700 pb-1">Live Trace</h3>
+                <div class="overflow-y-auto flex-grow">
+                    <table class="w-full text-[10px]">
+                        <tbody id="trace-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden print:block mt-4">
+            <h3 id="table-heading" class="font-bold text-sm mb-2">Execution Trace Table:</h3>
+            <table class="print-table w-full border-collapse border border-black">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 60px;">Exp</th>
+                        <th>Action</th>
+                        <th>Frontier (Priority Queue State)</th>
+                    </tr>
+                </thead>
+                <tbody id="print-table-body">
+                </tbody>
+            </table>
+            <div id="final-stats-print" class="mt-4 font-bold text-sm hidden">
+                <p>Optimal Path Found: <span id="sol-path" class="text-blue-800"></span></p>
+                <p>Total Cost: <span id="sol-cost" class="text-blue-800"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const graph = { 'S': { 'A': 8, 'B': 3 }, 'A': { 'C': 4, 'D': 10 }, 'B': { 'E': 5, 'F': 12 }, 'E': { 'G': 2 }, 'F': { 'G': 1 }, 'C': {}, 'D': {}, 'G': {} };
+        let frontier = [{ node: 'S', cost: 0, path: ['S'] }];
+        let visited = new Set();
+        let stepCount = 0;
+        let isDone = false;
+        let fullHistory = [];
+
+        function solveStep() {
+            if (isDone || frontier.length === 0) return;
+            stepCount++;
+            frontier.sort((a, b) => a.cost - b.cost);
+            let current = frontier.shift();
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+            document.getElementById(`node-${current.node}`).classList.add('active');
+
+            let actionText = `Pop ${current.node}`;
+            if (current.node === 'G') {
+                isDone = true;
+                highlightFinalPath(current.path);
+                fullHistory.push({ step: stepCount, exp: current.node, action: "GOAL FOUND", queue: "-" });
+                renderTables();
+                return;
+            }
+            visited.add(current.node);
+            document.getElementById(`node-${current.node}`).classList.add('visited');
+
+            let pushed = [];
+            for (let n in graph[current.node]) {
+                let cost = current.cost + graph[current.node][n];
+                frontier.push({ node: n, cost: cost, path: [...current.path, n] });
+                pushed.push(`${n}(${cost})`);
+            }
+            actionText += pushed.length > 0 ? ` | Push ${pushed.join(', ')}` : " | Leaf";
+            frontier.sort((a, b) => a.cost - b.cost);
+            let qStr = frontier.map(f => `${f.node}:${f.cost}`).join(', ');
+            fullHistory.push({ step: stepCount, exp: current.node, action: actionText, queue: qStr });
+            renderTables();
+        }
+
+        function renderTables() {
+            const uiBody = document.getElementById('trace-body');
+            uiBody.innerHTML = fullHistory.map(h => `<tr class="border-b border-slate-800"><td class="p-1">${h.step}</td><td class="font-bold text-yellow-400">${h.exp}</td><td class="text-slate-400">${h.action}</td><td class="text-blue-300 font-mono">${h.queue}</td></tr>`).join('');
+            uiBody.parentElement.parentElement.scrollTop = uiBody.parentElement.parentElement.scrollHeight;
+        }
+
+        function highlightFinalPath(path) {
+            let total = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                total += graph[path[i]][path[i + 1]];
+                document.getElementById(`node-${path[i + 1]}`).classList.add('path-highlight');
+                const line = document.getElementById(`line-${path[i]}-${path[i + 1]}`);
+                if (line) line.classList.add('line-path');
+            }
+            document.getElementById('sol-path').innerText = path.join(' → ');
+            document.getElementById('sol-cost').innerText = total;
+        }
+
+        function preparePrint(isSolution) {
+            const printBody = document.getElementById('print-table-body');
+            const typeLabel = document.getElementById('print-type-label');
+            const stats = document.getElementById('final-stats-print');
+            printBody.innerHTML = "";
+
+            if (isSolution) {
+                // Auto-solve if not done
+                while (!isDone && stepCount < 20) { solveStep(); }
+                typeLabel.innerText = "SOLUTION KEY: Uniform Cost Search (UCS)";
+                stats.classList.remove('hidden');
+                fullHistory.forEach(h => {
+                    printBody.innerHTML += `<tr><td>${h.step}</td><td>${h.exp}</td><td>${h.action}</td><td>${h.queue}</td></tr>`;
+                });
+            } else {
+                typeLabel.innerText = "Use Uniform Cost Search (UCS) to find the path from node S to node G in the graph below. Show the steps, traversing path and the shortest path with cost to reach the goal.";
+                stats.classList.add('hidden');
+                for (let i = 1; i <= 8; i++) {
+                    printBody.innerHTML += `<tr><td height="35">${i}</td><td></td><td></td><td></td></tr>`;
+                }
+            }
+            setTimeout(() => { window.print(); }, 200);
+        }
+    </script>
+</body>
+
+</html>

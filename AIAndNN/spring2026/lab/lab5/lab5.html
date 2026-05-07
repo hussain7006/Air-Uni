@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PCA: The Shadow Concept</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hand-3d { font-size: 80px; transition: all 1s ease; cursor: pointer; }
+        .shadow-2d { 
+            font-size: 80px; filter: brightness(0) blur(2px); opacity: 0.3;
+            transition: all 1s ease; transform: scaleY(0.3) skewX(20deg);
+        }
+        .concept-card { border-left: 8px solid; }
+    </style>
+</head>
+<body class="bg-slate-100 p-6 flex flex-col items-center min-h-screen">
+
+    <div class="max-w-3xl w-full bg-white p-10 rounded-[40px] shadow-2xl relative">
+        <div class="absolute top-6 right-6">
+            <button id="languageToggle" type="button" onclick="toggleLanguage()" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-100">
+                <span class="text-xs uppercase tracking-[0.2em] text-slate-400">Lang</span>
+                <span id="languageToggleLabel">English</span>
+            </button>
+        </div>
+        <h1 id="pageTitle" class="text-4xl font-black text-center mb-10 text-slate-800">PCA Samjhein: "Saye ka Khel" 🖐️</h1>
+
+        <div class="flex justify-around items-center bg-blue-50 p-10 rounded-3xl mb-10 border-2 border-blue-100">
+            <div class="text-center">
+                <p id="originalDataLabel" class="text-xs font-bold uppercase text-blue-500 mb-4">Asal Data (4 Features)</p>
+                <div id="original" class="hand-3d">🖐️</div>
+                <p id="handLabel" class="mt-4 font-bold text-slate-700">3D Hath</p>
+            </div>
+
+            <div class="text-4xl text-blue-200">➔</div>
+
+            <div class="text-center">
+                <p id="pcaResultLabel" class="text-xs font-bold uppercase text-emerald-500 mb-4">PCA Result (2 Components)</p>
+                <div id="shadow" class="shadow-2d">🖐️</div>
+                <p id="shadowLabel" class="mt-4 font-bold text-slate-700">2D Saya</p>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div onclick="showVector()" class="concept-card border-amber-400 bg-amber-50 p-6 rounded-2xl cursor-pointer hover:bg-amber-100 transition">
+                <h3 id="vectorTitle" class="text-xl font-black text-amber-700">1. Eigenvector (Best Angle) 📸</h3>
+                <p id="vectorDescription" class="text-slate-600 mt-2">Bachon, agar hum hath ko <b>galat angle</b> se dikhayein to saya (shadow) samajh nahi aayega. <b>Eigenvector</b> wo best angle hai jahan se saya bilkul saaf nazar aaye.</p>
+            </div>
+
+            <div onclick="showValue()" class="concept-card border-emerald-400 bg-emerald-50 p-6 rounded-2xl cursor-pointer hover:bg-emerald-100 transition">
+                <h3 id="valueTitle" class="text-xl font-bold text-emerald-700">2. Eigenvalue (Saye ki Safayi) ✨</h3>
+                <p id="valueDescription" class="text-slate-600 mt-2">Jitna bara saya hoga, utni zyada information nazar aayegi. <b>Eigenvalue</b> batati hai ke hamara saya (PCA result) kitna "bara aur saaf" hai.</p>
+            </div>
+
+            <div onclick="showReduction()" class="concept-card border-blue-400 bg-blue-50 p-6 rounded-2xl cursor-pointer hover:bg-blue-100 transition">
+                <h3 id="reductionTitle" class="text-xl font-bold text-blue-700">3. Dimensionality Reduction 📉</h3>
+                <p id="reductionDescription" class="text-slate-600 mt-2">Hath asli hai (3D), magar saya sirf deewar par hai (2D). Humne <b>Dimension kam kar di</b> magar hath ki pehchan baqi rakhi.</p>
+            </div>
+        </div>
+
+        <p id="footerNote" class="text-center mt-10 text-slate-400 text-sm italic">In boxes par click kar ke bacchon ko logic samjhayein!</p>
+    </div>
+
+    <script>
+        const translations = {
+            rom: {
+                pageTitle: 'PCA Samjhein: "Saye ka Khel" 🖐️',
+                originalDataLabel: 'Asal Data (4 Features)',
+                pcaResultLabel: 'PCA Result (2 Components)',
+                handLabel: '3D Hath',
+                shadowLabel: '2D Saya',
+                vectorTitle: '1. Eigenvector (Best Angle) 📸',
+                vectorDescription: 'Bachon, agar hum hath ko <b>galat angle</b> se dikhayein to saya (shadow) samajh nahi aayega. <b>Eigenvector</b> wo best angle hai jahan se saya bilkul saaf nazar aaye.',
+                valueTitle: '2. Eigenvalue (Saye ki Safayi) ✨',
+                valueDescription: 'Jitna bara saya hoga, utni zyada information nazar aayegi. <b>Eigenvalue</b> batati hai ke hamara saya (PCA result) kitna "bara aur saaf" hai.',
+                reductionTitle: '3. Dimensionality Reduction 📉',
+                reductionDescription: 'Hath asli hai (3D), magar saya sirf deewar par hai (2D). Humne <b>Dimension kam kar di</b> magar hath ki pehchan baqi rakhi.',
+                footerNote: 'In boxes par click kar ke bacchon ko logic samjhayein!',
+                alertMessage: 'Bachon! PCA ne 4 features (Ungliyan, Hatheli, etc.) ko mila kar sirf ek 2D \"Saya\" bana diya. Yehi Dimensionality Reduction hai!',
+                toggleLabel: 'English'
+            },
+            en: {
+                pageTitle: 'Understanding PCA: "Shadow Play" 🖐️',
+                originalDataLabel: 'Original Data (4 Features)',
+                pcaResultLabel: 'PCA Result (2 Components)',
+                handLabel: '3D Hand',
+                shadowLabel: '2D Shadow',
+                vectorTitle: '1. Eigenvector (Best Angle) 📸',
+                vectorDescription: 'Kids, if we show the hand from the <b>wrong angle</b>, the shadow will not make sense. The <b>Eigenvector</b> is the best angle from which the shadow looks perfectly clear.',
+                valueTitle: '2. Eigenvalue (Shadow Clarity) ✨',
+                valueDescription: 'The bigger the shadow, the more information we can see. The <b>Eigenvalue</b> tells us how "big and clear" our shadow (PCA result) is.',
+                reductionTitle: '3. Dimensionality Reduction 📉',
+                reductionDescription: 'The hand is real (3D), but the shadow is only on the wall (2D). We <b>reduced the dimensions</b> but kept the identity of the hand.',
+                footerNote: 'Click the boxes to explain the logic to kids!',
+                alertMessage: 'Kids! PCA combined 4 features (fingers, palm, etc.) and made just one 2D "shadow". That is dimensionality reduction!',
+                toggleLabel: 'Roman'
+            }
+        };
+
+        let currentLanguage = 'rom';
+
+        function applyLanguage(language) {
+            currentLanguage = language;
+            const strings = translations[language];
+
+            document.getElementById('pageTitle').innerHTML = strings.pageTitle;
+            document.getElementById('originalDataLabel').innerHTML = strings.originalDataLabel;
+            document.getElementById('pcaResultLabel').innerHTML = strings.pcaResultLabel;
+            document.getElementById('handLabel').innerHTML = strings.handLabel;
+            document.getElementById('shadowLabel').innerHTML = strings.shadowLabel;
+            document.getElementById('vectorTitle').innerHTML = strings.vectorTitle;
+            document.getElementById('vectorDescription').innerHTML = strings.vectorDescription;
+            document.getElementById('valueTitle').innerHTML = strings.valueTitle;
+            document.getElementById('valueDescription').innerHTML = strings.valueDescription;
+            document.getElementById('reductionTitle').innerHTML = strings.reductionTitle;
+            document.getElementById('reductionDescription').innerHTML = strings.reductionDescription;
+            document.getElementById('footerNote').innerHTML = strings.footerNote;
+            document.getElementById('languageToggleLabel').innerHTML = strings.toggleLabel;
+        }
+
+        function toggleLanguage() {
+            const nextLanguage = currentLanguage === 'rom' ? 'en' : 'rom';
+            applyLanguage(nextLanguage);
+        }
+
+        function showVector() {
+            document.getElementById('original').style.transform = 'rotateY(180deg) scale(1.2)';
+            setTimeout(() => { document.getElementById('original').style.transform = 'rotateY(0deg) scale(1)'; }, 1000);
+        }
+        function showValue() {
+            document.getElementById('shadow').style.transform = 'scale(1.5) skewX(0deg)';
+            document.getElementById('shadow').style.opacity = '0.6';
+            setTimeout(() => { 
+                document.getElementById('shadow').style.transform = 'scaleY(0.3) skewX(20deg)'; 
+                document.getElementById('shadow').style.opacity = '0.3';
+            }, 1500);
+        }
+        function showReduction() {
+            alert(translations[currentLanguage].alertMessage);
+        }
+
+        applyLanguage('rom');
+    </script>
+</body>
+</html>
