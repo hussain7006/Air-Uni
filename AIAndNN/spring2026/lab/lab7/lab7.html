@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lab 07: KNN Professional Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(15, 15, 20, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #818cf8, #c084fc, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #canvas-container {
+            position: relative;
+            cursor: crosshair;
+            background: radial-gradient(circle at center, #111 0%, #050505 100%);
+        }
+
+        .control-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #818cf8;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-bold gradient-text">KNN Engine v2.0</h1>
+                <p class="text-gray-400 mt-2">Department of Mechatronics - Air University</p>
+            </div>
+            <div class="text-right hidden md:block">
+                <span
+                    class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-xs text-indigo-400 font-mono">
+                    LAB 07: CLASSIFICATION
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            <div class="lg:col-span-1 space-y-6">
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Configuration
+                    </h3>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-2">K-Neighbors: <span id="k-val-display"
+                                    class="text-white">3</span></label>
+                            <input type="range" id="k-slider" min="1" max="11" step="2" value="3"
+                                class="control-slider">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-2">Grid Resolution: <span id="res-display"
+                                    class="text-white">20px</span></label>
+                            <input type="range" id="res-slider" min="10" max="50" step="5" value="25"
+                                class="control-slider">
+                        </div>
+
+                        <div class="pt-4 border-t border-white/5">
+                            <button id="toggle-boundary"
+                                class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all font-semibold text-sm">
+                                Toggle Decision Region
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h3 class="text-lg font-semibold mb-2">Status Console</h3>
+                    <div id="console" class="font-mono text-xs text-emerald-400 space-y-1 h-32 overflow-y-auto">
+                        > System Initialized<br>
+                        > Ready for Classification...
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                <div class="glass-panel rounded-3xl overflow-hidden relative" id="canvas-container">
+                    <canvas id="knnCanvas"></canvas>
+
+                    <div class="absolute bottom-6 left-6 pointer-events-none">
+                        <div
+                            class="flex gap-4 items-center bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+                                <span class="text-xs font-medium">Class: Play</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                <span class="text-xs font-medium">Class: No-Play</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('knnCanvas');
+        const ctx = canvas.getContext('2d');
+        const consoleBox = document.getElementById('console');
+
+        let kValue = 3;
+        let resolution = 25;
+        let showBoundary = true;
+
+        // Real Lab Data: Weather (Encoded) & Temp (Encoded)
+        // Weather: Sunny=0, Overcast=1, Rainy=2
+        // Temp: Hot=0, Mild=1, Cool=2
+        let dataPoints = [
+            { x: 50, y: 50, label: 0 }, // Sunny, Hot -> No
+            { x: 80, y: 60, label: 0 },
+            { x: 200, y: 100, label: 1 }, // Overcast, Hot -> Yes
+            { x: 400, y: 300, label: 1 },
+            { x: 150, y: 400, label: 1 },
+            { x: 500, y: 150, label: 0 }
+        ];
+
+        function initCanvas() {
+            const container = document.getElementById('canvas-container');
+            canvas.width = container.clientWidth;
+            canvas.height = 550;
+            render();
+        }
+
+        function log(msg) {
+            consoleBox.innerHTML += `> ${msg}<br>`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function getDist(p1, p2) {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+
+        function classify(testPoint) {
+            let distances = dataPoints.map(p => ({
+                dist: getDist(testPoint, p),
+                label: p.label
+            }));
+
+            distances.sort((a, b) => a.dist - b.dist);
+            let neighbors = distances.slice(0, kValue);
+
+            let votes = neighbors.reduce((acc, n) => {
+                acc[n.label] = (acc[n.label] || 0) + 1;
+                return acc;
+            }, {});
+
+            return Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
+        }
+
+        function drawDecisionBoundary() {
+            if (!showBoundary) return;
+
+            for (let x = 0; x < canvas.width; x += resolution) {
+                for (let y = 0; y < canvas.height; y += resolution) {
+                    let label = classify({ x, y });
+                    ctx.fillStyle = label == 1 ? 'rgba(34, 211, 238, 0.1)' : 'rgba(249, 115, 22, 0.1)';
+                    ctx.fillRect(x, y, resolution, resolution);
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawDecisionBoundary();
+
+            dataPoints.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = p.label == 1 ? '#22d3ee' : '#f97316';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        // Interaction
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Add new point with random label for demo
+            const newLabel = Math.random() > 0.5 ? 1 : 0;
+            dataPoints.push({ x, y, label: newLabel });
+            log(`Added Point at ${Math.round(x)}, ${Math.round(y)}`);
+            render();
+        });
+
+        document.getElementById('k-slider').addEventListener('input', (e) => {
+            kValue = parseInt(e.target.value);
+            document.getElementById('k-val-display').innerText = kValue;
+            log(`K-Value changed to ${kValue}`);
+            render();
+        });
+
+        document.getElementById('res-slider').addEventListener('input', (e) => {
+            resolution = parseInt(e.target.value);
+            document.getElementById('res-display').innerText = resolution + 'px';
+            render();
+        });
+
+        document.getElementById('toggle-boundary').addEventListener('click', () => {
+            showBoundary = !showBoundary;
+            render();
+        });
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+    </script>
+</body>
+
+</html>
