@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Perceptron Infinity | Lab 08</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #c084fc;
+            --accent: #22d3ee;
+            --dark: #020617;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+        }
+        .neon-border {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2), inset 0 0 10px rgba(99, 102, 241, 0.1);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5);
+        }
+        .example-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .math-box {
+            font-family: 'JetBrains Mono', monospace;
+            background: #000;
+            padding: 1rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent);
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: #1e293b;
+            height: 6px;
+            border-radius: 10px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary);
+        }
+        /* Custom Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+    </style>
+</head>
+<body class="p-4 lg:p-12">
+
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/20 blur-[120px] rounded-full pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-16 space-y-4">
+            <div class="inline-block px-4 py-1 rounded-full glass border-indigo-500/30 text-indigo-400 text-sm font-semibold tracking-wider mb-2">
+                LAB 08 • PERCEPTRON LEARNING
+            </div>
+            <h1 class="text-6xl lg:text-8xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-500">
+                AI Brain Simulator
+            </h1>
+            <p class="text-gray-400 text-xl max-w-2xl mx-auto">
+                Machine learning ko asaan banate hain. Seekhain kaise ek chota sa neuron bare faislay karta hai.
+            </p>
+        </header>
+
+        <div class="flex justify-center mb-12">
+            <div class="glass p-2 flex gap-4 neon-border">
+                <button onclick="setTab('theory')" id="t-theory" class="tab-active px-10 py-3 rounded-2xl font-bold transition-all flex items-center gap-2">
+                    <i data-lucide="book-open"></i> Theory & Examples
+                </button>
+                <button onclick="setTab('playground')" id="t-playground" class="px-10 py-3 rounded-2xl font-bold transition-all text-gray-400 hover:text-white flex items-center gap-2">
+                    <i data-lucide="cpu"></i> Super Playground
+                </button>
+            </div>
+        </div>
+
+        <div id="section-theory" class="space-y-12 transition-all duration-500">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center glass p-10">
+                <div class="space-y-6">
+                    <h2 class="text-4xl font-bold">Perceptron Kya Hai? 🧠</h2>
+                    <p class="text-gray-400 text-lg leading-relaxed">
+                        Perceptron AI ka ek "Single Neuron" hai. Iska kaam sirf itna hai ke Inputs ko dekhe aur bataye ke result <strong>"HAAN (1)"</strong> hai ya <strong>"NAHI (0)"</strong>. 
+                        Yeh bilkul aik boundary line ki tarah hai: ek taraf positive, dusri taraf negative.
+                    </p>
+                    <div class="math-box text-sm">
+                        <span class="text-indigo-400">Step 1:</span> Sum = (x1*w1) + (x2*w2) + b <br>
+                        <span class="text-indigo-400">Step 2:</span> If Sum > 0 Output = 1 Else 0
+                    </div>
+                </div>
+                <div class="relative flex justify-center">
+                    <div class="w-64 h-64 bg-indigo-600 rounded-full flex items-center justify-center text-8xl shadow-[0_0_50px_rgba(99,102,241,0.4)] animate-float">
+                        🤖
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <h3 class="text-3xl font-bold mb-8">6 Real-World Examples 🌍</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="glass p-6 example-card transition-all border-l-4 border-l-blue-500">
+                        <div class="text-3xl mb-4">🎸</div>
+                        <h4 class="font-bold text-xl mb-2">Concert Decision</h4>
+                        <p class="text-sm text-gray-400">Inputs: Mausam acha hai? + Dost ja rahe hain? <br> AI batayega ticket leni hai ya nahi.</p>
+                    </div>
+                    <div class="glass p-6 example-card transition-all border-l-4 border-l-green-500">
+                        <div class="text-3xl mb-4">📚</div>
+                        <h4 class="font-bold text-xl mb-2">Exam Result</h4>
+                        <p class="text-sm text-gray-400">Inputs: Study hours + Sleep hours. <br> AI predict karega ke bacha pass hoga ya fail.</p>
+                    </div>
+                    <div class="glass p-6 example-card transition-all border-l-4 border-l-red-500">
+                        <div class="text-3xl mb-4">📧</div>
+                        <h4 class="font-bold text-xl mb-2">Spam Filter</h4>
+                        <p class="text-sm text-gray-400">Inputs: Link maujood hai? + Unknown sender? <br> AI email ko inbox ya spam mein daalega.</p>
+                    </div>
+                    <div class="glass p-6 example-card transition-all border-l-4 border-l-yellow-500">
+                        <div class="text-3xl mb-4">💰</div>
+                        <h4 class="font-bold text-xl mb-2">Loan Approval</h4>
+                        <p class="text-sm text-gray-400">Inputs: Credit Score + Salary. <br> Bank ka AI decide karega loan dena hai ya nahi.</p>
+                    </div>
+                    <div class="glass p-6 example-card transition-all border-l-4 border-l-purple-500">
+                        <div class="text-3xl mb-4">🏋️</div>
+                        <h4 class="font-bold text-xl mb-2">Fitness Goal</h4>
+                        <p class="text-sm text-gray-400">Inputs: Calories burned + Water intake. <br> AI batayega ke aaj ka goal poora hua ya nahi.</p>
+                    </div>
+                    <div class="glass p-6 example-card transition-all border-l-4 border-l-orange-500">
+                        <div class="text-3xl mb-4">⚽</div>
+                        <h4 class="font-bold text-xl mb-2">Match Prediction</h4>
+                        <p class="text-sm text-gray-400">Inputs: Home Ground + Player Fitness. <br> AI batayega team jeetay gi ya nahi.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-playground" class="hidden space-y-12 transition-all duration-500">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div class="glass p-8 space-y-10 border-t-4 border-t-indigo-500">
+                    <h3 class="text-2xl font-bold flex items-center gap-2">
+                        <i data-lucide="settings-2" class="text-indigo-400"></i> Adjust AI Brain
+                    </h3>
+
+                    <div class="space-y-8">
+                        <div>
+                            <div class="flex justify-between text-sm mb-4">
+                                <label class="text-gray-400 uppercase tracking-widest font-bold">Weight 1 (x1 axis)</label>
+                                <span id="v-w1" class="text-indigo-400 font-mono text-lg">0.5</span>
+                            </div>
+                            <input type="range" id="pg-w1" min="-2" max="2" step="0.1" value="0.5" class="w-full" oninput="updateCore()">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-4">
+                                <label class="text-gray-400 uppercase tracking-widest font-bold">Weight 2 (x2 axis)</label>
+                                <span id="v-w2" class="text-purple-400 font-mono text-lg">0.8</span>
+                            </div>
+                            <input type="range" id="pg-w2" min="-2" max="2" step="0.1" value="0.8" class="w-full" oninput="updateCore()">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-4">
+                                <label class="text-gray-400 uppercase tracking-widest font-bold">Bias (Shift)</label>
+                                <span id="v-b" class="text-pink-400 font-mono text-lg">-0.5</span>
+                            </div>
+                            <input type="range" id="pg-b" min="-2" max="2" step="0.1" value="-0.5" class="w-full" oninput="updateCore()">
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/5 space-y-4">
+                        <button onclick="simulateLearning()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                            <i data-lucide="zap"></i> Simualte Learning Step
+                        </button>
+                        <p class="text-[10px] text-gray-500 text-center uppercase tracking-tighter">Clicking this will automatically adjust weights for a perfect split</p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="glass p-6 h-[500px] relative">
+                        <canvas id="playgroundChart"></canvas>
+                        <div class="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded-full text-xs border border-white/10">
+                            Live Decision Line
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="glass p-8 flex flex-col items-center justify-center text-center">
+                            <p class="text-gray-500 text-sm font-bold mb-2">NEURON ACTIVATION (Σ)</p>
+                            <h2 id="pg-sum" class="text-5xl font-extrabold tracking-tighter text-white">0.00</h2>
+                        </div>
+                        <div id="pg-output-card" class="glass p-8 flex flex-col items-center justify-center text-center transition-all duration-500">
+                            <p class="text-gray-500 text-sm font-bold mb-2">DECISION (Y)</p>
+                            <h2 id="pg-result" class="text-7xl font-black">?</h2>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        let chart;
+        const ctx = document.getElementById('playgroundChart').getContext('2d');
+
+        function initChart() {
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Decision Boundary',
+                        data: [],
+                        type: 'line',
+                        borderColor: '#6366f1',
+                        borderWidth: 4,
+                        fill: {
+                            target: 'origin',
+                            above: 'rgba(99, 102, 241, 0.1)',
+                            below: 'rgba(239, 68, 68, 0.1)'
+                        },
+                        pointRadius: 0
+                    }, {
+                        label: 'Points',
+                        data: [
+                            {x: 1, y: 1}, {x: 1, y: -1}, {x: -1, y: 1}, {x: -1, y: -1}
+                        ],
+                        backgroundColor: (context) => {
+                            const p = context.raw;
+                            return (p.x * 0.5 + p.y * 0.8 - 0.5 > 0) ? '#22c55e' : '#ef4444';
+                        },
+                        pointRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { min: -2, max: 2, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { min: -2, max: 2, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function setTab(tab) {
+            const secTheory = document.getElementById('section-theory');
+            const secPlay = document.getElementById('section-playground');
+            const btnT = document.getElementById('t-theory');
+            const btnP = document.getElementById('t-playground');
+
+            if (tab === 'theory') {
+                secTheory.classList.remove('hidden');
+                secPlay.classList.add('hidden');
+                btnT.className = 'tab-active px-10 py-3 rounded-2xl font-bold transition-all flex items-center gap-2';
+                btnP.className = 'px-10 py-3 rounded-2xl font-bold transition-all text-gray-400 hover:text-white flex items-center gap-2';
+            } else {
+                secTheory.classList.add('hidden');
+                secPlay.classList.remove('hidden');
+                btnP.className = 'tab-active px-10 py-3 rounded-2xl font-bold transition-all flex items-center gap-2';
+                btnT.className = 'px-10 py-3 rounded-2xl font-bold transition-all text-gray-400 hover:text-white flex items-center gap-2';
+                if(!chart) initChart();
+                updateCore();
+            }
+        }
+
+        function updateCore() {
+            const w1 = parseFloat(document.getElementById('pg-w1').value);
+            const w2 = parseFloat(document.getElementById('pg-w2').value);
+            const b = parseFloat(document.getElementById('pg-b').value);
+
+            document.getElementById('v-w1').innerText = w1.toFixed(1);
+            document.getElementById('v-w2').innerText = w2.toFixed(1);
+            document.getElementById('v-b').innerText = b.toFixed(1);
+
+            // Calculation for a fixed test point (1,1)
+            const sum = (w1 * 1) + (w2 * 1) + b;
+            const output = sum > 0 ? 1 : 0;
+
+            document.getElementById('pg-sum').innerText = sum.toFixed(2);
+            const resTxt = document.getElementById('pg-result');
+            const resCard = document.getElementById('pg-output-card');
+
+            resTxt.innerText = output;
+            if(output === 1) {
+                resCard.style.borderColor = '#22c55e';
+                resTxt.style.color = '#22c55e';
+                resCard.style.boxShadow = '0 0 30px rgba(34, 197, 94, 0.2)';
+            } else {
+                resCard.style.borderColor = '#ef4444';
+                resTxt.style.color = '#ef4444';
+                resCard.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.2)';
+            }
+
+            // Boundary line logic: w1*x + w2*y + b = 0  => y = (-w1*x - b)/w2
+            const lineData = [];
+            if(w2 !== 0) {
+                for(let x = -2.5; x <= 2.5; x += 0.5) {
+                    lineData.push({x: x, y: (-w1 * x - b) / w2});
+                }
+            }
+            chart.data.datasets[0].data = lineData;
+            
+            // Re-color points based on current logic
+            chart.data.datasets[1].backgroundColor = chart.data.datasets[1].data.map(p => {
+                return (p.x * w1 + p.y * w2 + b > 0) ? '#22c55e' : '#ef4444';
+            });
+
+            chart.update('none');
+        }
+
+        function simulateLearning() {
+            // Animating a "learning" step - shifting bias to fix a mistake
+            let currentB = parseFloat(document.getElementById('pg-b').value);
+            const targetB = 0.2; // A value that typically splits points nicely
+            
+            let step = 0;
+            const interval = setInterval(() => {
+                if(step >= 10) {
+                    clearInterval(interval);
+                    return;
+                }
+                currentB += (targetB - currentB) / 5;
+                document.getElementById('pg-b').value = currentB;
+                updateCore();
+                step++;
+            }, 50);
+        }
+
+        window.onload = () => {
+            // Initial state
+        };
+    </script>
+</body>
+</html>

@@ -4,131 +4,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Lab 07: KNN Professional Visualizer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <title>KNN Masterclass | Air University AI Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
 
         body {
-            background-color: #050505;
-            color: #e2e8f0;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
+            background: #020617;
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        .glass-panel {
-            background: rgba(15, 15, 20, 0.7);
+        .glass {
+            background: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .gradient-text {
-            background: linear-gradient(90deg, #818cf8, #c084fc, #22d3ee);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .tab-active {
+            background: #6366f1;
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5);
         }
 
-        #canvas-container {
-            position: relative;
-            cursor: crosshair;
-            background: radial-gradient(circle at center, #111 0%, #050505 100%);
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
         }
 
-        .control-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 6px;
-            background: #1e293b;
-            border-radius: 5px;
-            outline: none;
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #6366f1;
+            border-radius: 10px;
         }
 
-        .control-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: #818cf8;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid #fff;
+        .distance-label {
+            font-size: 10px;
+            font-weight: bold;
+            fill: #6366f1;
+            pointer-events: none;
         }
     </style>
 </head>
 
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-10">
 
     <div class="max-w-7xl mx-auto">
-        <div class="mb-8 flex justify-between items-end">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
             <div>
-                <h1 class="text-4xl font-bold gradient-text">KNN Engine v2.0</h1>
-                <p class="text-gray-400 mt-2">Department of Mechatronics - Air University</p>
+                <h1 class="text-4xl font-black tracking-tighter italic">KNN <span class="text-indigo-500">LAB_07</span>
+                </h1>
+                <p class="text-xs text-slate-500 uppercase tracking-[0.3em] mt-1">Mechatronics Engineering Department
+                </p>
             </div>
-            <div class="text-right hidden md:block">
-                <span
-                    class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-xs text-indigo-400 font-mono">
-                    LAB 07: CLASSIFICATION
-                </span>
+
+            <div class="glass p-1.5 rounded-2xl flex gap-1">
+                <button onclick="switchTab('theory')" id="btn-theory"
+                    class="tab-active px-8 py-3 rounded-xl text-sm font-bold transition-all">
+                    THEORY & CONCEPTS
+                </button>
+                <button onclick="switchTab('simulator')" id="btn-simulator"
+                    class="px-8 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all">
+                    INTERACTIVE SIMULATOR
+                </button>
+            </div>
+        </header>
+
+        <div id="tab-theory" class="space-y-8 block">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass p-8 rounded-[2.5rem] border-t-4 border-indigo-500">
+                    <h3 class="text-lg font-bold mb-3">Algorithm Logic</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        KNN ek <b>Lazy Learner</b> hai. Ye training ke waqt kuch nahi seekhta, balkay testing ke waqt
+                        poore dataset se distance calculate karta hai.
+                    </p>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] border-t-4 border-emerald-500">
+                    <h3 class="text-lg font-bold mb-3">Euclidean Metric</h3>
+                    <p class="text-sm text-slate-400 mb-4">Hum do points ke beech ka straight-line fasla is formula se
+                        nikalte hain:</p>
+                    <div class="bg-black/30 p-4 rounded-xl text-center font-mono text-emerald-400">
+                        d = √Σ(xᵢ - yᵢ)²
+                    </div>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] border-t-4 border-rose-500">
+                    <h3 class="text-lg font-bold mb-3">The "K" Parameter</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        K ki value hamesha Odd rakhi jati hai taake <b>Majority Voting</b> mein tie na ho. K=1
+                        overfitting karta hai, jabke bara K smoothing karta hai.
+                    </p>
+                </div>
+            </div>
+
+            <div class="glass rounded-[3rem] p-10 flex flex-col items-center">
+                <h3 class="text-2xl font-bold mb-6">Animated Voting Process</h3>
+                <div
+                    class="relative w-full max-w-2xl h-48 bg-slate-900/50 rounded-3xl border border-dashed border-slate-700 flex items-center justify-center overflow-hidden">
+                    <div class="absolute bg-emerald-500 w-3 h-3 rounded-full" style="top:20%; left:30%"></div>
+                    <div class="absolute bg-emerald-500 w-3 h-3 rounded-full" style="top:30%; left:25%"></div>
+                    <div class="absolute bg-rose-500 w-3 h-3 rounded-full" style="top:70%; left:40%"></div>
+
+                    <div class="relative">
+                        <div class="w-8 h-8 bg-white rounded-lg shadow-2xl animate-bounce"></div>
+                        <div class="absolute -inset-8 border border-indigo-500/30 rounded-full animate-ping"></div>
+                    </div>
+                    <p class="absolute bottom-4 text-[10px] text-slate-500 uppercase tracking-widest">Searching for 3
+                        closest neighbors...</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 w-full">
+                    <div class="bg-indigo-500/5 p-6 rounded-2xl border border-indigo-500/20">
+                        <h4 class="font-bold text-indigo-400 mb-2">Lab Task 01: Anomalies</h4>
+                        <p class="text-xs text-slate-400">Agar koi point apne neighbors se bilkul mukhtalif behave kare,
+                            to use hum <b>Outlier</b> ya discrepancy kehte hain.</p>
+                    </div>
+                    <div class="bg-emerald-500/5 p-6 rounded-2xl border border-emerald-500/20">
+                        <h4 class="font-bold text-emerald-400 mb-2">Lab Task 02: Decision Boundary</h4>
+                        <p class="text-xs text-slate-400">0.2 ke interval par grid divide karke shading karne se hume
+                            predictor ka <b>Shaded Region</b> milta hai.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-            <div class="lg:col-span-1 space-y-6">
-                <div class="glass-panel p-6 rounded-3xl">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Configuration
-                    </h3>
-
-                    <div class="space-y-6">
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">K-Neighbors: <span id="k-val-display"
-                                    class="text-white">3</span></label>
-                            <input type="range" id="k-slider" min="1" max="11" step="2" value="3"
-                                class="control-slider">
-                        </div>
-
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Grid Resolution: <span id="res-display"
-                                    class="text-white">20px</span></label>
-                            <input type="range" id="res-slider" min="10" max="50" step="5" value="25"
-                                class="control-slider">
-                        </div>
-
-                        <div class="pt-4 border-t border-white/5">
-                            <button id="toggle-boundary"
-                                class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all font-semibold text-sm">
-                                Toggle Decision Region
-                            </button>
-                        </div>
-                    </div>
+        <div id="tab-simulator" class="hidden space-y-6">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-bold italic">Precision Simulator</h2>
+                    <p class="text-slate-500 text-xs tracking-widest">REAL-TIME EUCLIDEAN MAPPING</p>
                 </div>
-
-                <div class="glass-panel p-6 rounded-3xl">
-                    <h3 class="text-lg font-semibold mb-2">Status Console</h3>
-                    <div id="console" class="font-mono text-xs text-emerald-400 space-y-1 h-32 overflow-y-auto">
-                        > System Initialized<br>
-                        > Ready for Classification...
+                <div class="flex gap-4 items-center">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Neighbors (K)</span>
+                        <select id="k-select"
+                            class="bg-slate-900 border border-white/10 rounded-lg px-4 py-2 text-sm focus:ring-2 ring-indigo-500 outline-none">
+                            <option value="1">K = 1</option>
+                            <option value="3" selected>K = 3</option>
+                            <option value="5">K = 5</option>
+                            <option value="7">K = 7</option>
+                        </select>
                     </div>
+                    <button onclick="runSim()"
+                        class="bg-indigo-600 hover:bg-indigo-500 px-8 py-3 rounded-xl font-bold shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
+                        START ANALYSIS
+                    </button>
                 </div>
             </div>
 
-            <div class="lg:col-span-3">
-                <div class="glass-panel rounded-3xl overflow-hidden relative" id="canvas-container">
-                    <canvas id="knnCanvas"></canvas>
+            <div class="grid grid-cols-12 gap-6 h-[650px]">
+                <div class="col-span-8 glass rounded-[3rem] relative overflow-hidden bg-slate-950/40">
+                    <svg id="canvas" class="w-full h-full cursor-crosshair"></svg>
+                    <div class="absolute top-6 left-6 p-4 glass rounded-2xl pointer-events-none">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-3 h-3 bg-emerald-500 rounded-full"></div><span
+                                class="text-[10px] font-bold uppercase">Play</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-rose-500 rounded-full"></div><span
+                                class="text-[10px] font-bold uppercase">No-Play</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="absolute bottom-6 left-6 pointer-events-none">
-                        <div
-                            class="flex gap-4 items-center bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
-                                <span class="text-xs font-medium">Class: Play</span>
+                <div class="col-span-4 flex flex-col gap-6 overflow-hidden">
+                    <div class="glass rounded-[2.5rem] p-6 flex-1 flex flex-col overflow-hidden">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Calculation Ledger
+                        </h4>
+                        <div class="overflow-y-auto custom-scroll flex-1 pr-2">
+                            <table class="w-full text-[11px] font-mono border-separate border-spacing-y-2">
+                                <tbody id="ledger"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-[2.5rem] p-8 border-t-4 border-indigo-600">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Final Prediction</span>
+                            <span id="final-badge"
+                                class="px-4 py-1 bg-white/5 rounded-full text-[10px] font-bold">READY</span>
+                        </div>
+                        <div class="flex justify-around items-center mb-6">
+                            <div class="text-center">
+                                <p id="v-play" class="text-3xl font-black text-emerald-500">0</p>
+                                <p class="text-[8px] uppercase text-slate-500">Play</p>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
-                                <span class="text-xs font-medium">Class: No-Play</span>
+                            <div class="w-px h-10 bg-white/10"></div>
+                            <div class="text-center">
+                                <p id="v-noplay" class="text-3xl font-black text-rose-500">0</p>
+                                <p class="text-[8px] uppercase text-slate-500">No-Play</p>
                             </div>
+                        </div>
+                        <div id="decision-text" class="text-center text-xl font-black italic tracking-widest">- - -
                         </div>
                     </div>
                 </div>
@@ -137,120 +202,120 @@
     </div>
 
     <script>
-        const canvas = document.getElementById('knnCanvas');
-        const ctx = canvas.getContext('2d');
-        const consoleBox = document.getElementById('console');
+        const canvas = document.getElementById('canvas');
+        const ledger = document.getElementById('ledger');
+        let points = [];
 
-        let kValue = 3;
-        let resolution = 25;
-        let showBoundary = true;
+        function switchTab(tab) {
+            const tTab = document.getElementById('tab-theory');
+            const sTab = document.getElementById('tab-simulator');
+            const tBtn = document.getElementById('btn-theory');
+            const sBtn = document.getElementById('btn-simulator');
 
-        // Real Lab Data: Weather (Encoded) & Temp (Encoded)
-        // Weather: Sunny=0, Overcast=1, Rainy=2
-        // Temp: Hot=0, Mild=1, Cool=2
-        let dataPoints = [
-            { x: 50, y: 50, label: 0 }, // Sunny, Hot -> No
-            { x: 80, y: 60, label: 0 },
-            { x: 200, y: 100, label: 1 }, // Overcast, Hot -> Yes
-            { x: 400, y: 300, label: 1 },
-            { x: 150, y: 400, label: 1 },
-            { x: 500, y: 150, label: 0 }
-        ];
-
-        function initCanvas() {
-            const container = document.getElementById('canvas-container');
-            canvas.width = container.clientWidth;
-            canvas.height = 550;
-            render();
-        }
-
-        function log(msg) {
-            consoleBox.innerHTML += `> ${msg}<br>`;
-            consoleBox.scrollTop = consoleBox.scrollHeight;
-        }
-
-        function getDist(p1, p2) {
-            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-        }
-
-        function classify(testPoint) {
-            let distances = dataPoints.map(p => ({
-                dist: getDist(testPoint, p),
-                label: p.label
-            }));
-
-            distances.sort((a, b) => a.dist - b.dist);
-            let neighbors = distances.slice(0, kValue);
-
-            let votes = neighbors.reduce((acc, n) => {
-                acc[n.label] = (acc[n.label] || 0) + 1;
-                return acc;
-            }, {});
-
-            return Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
-        }
-
-        function drawDecisionBoundary() {
-            if (!showBoundary) return;
-
-            for (let x = 0; x < canvas.width; x += resolution) {
-                for (let y = 0; y < canvas.height; y += resolution) {
-                    let label = classify({ x, y });
-                    ctx.fillStyle = label == 1 ? 'rgba(34, 211, 238, 0.1)' : 'rgba(249, 115, 22, 0.1)';
-                    ctx.fillRect(x, y, resolution, resolution);
-                }
+            if (tab === 'theory') {
+                tTab.style.display = 'block';
+                sTab.style.display = 'none';
+                tBtn.className = 'tab-active px-8 py-3 rounded-xl text-sm font-bold transition-all';
+                sBtn.className = 'px-8 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all';
+            } else {
+                tTab.style.display = 'none';
+                sTab.style.display = 'block';
+                sBtn.className = 'tab-active px-8 py-3 rounded-xl text-sm font-bold transition-all';
+                tBtn.className = 'px-8 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all';
+                initData();
             }
         }
 
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            drawDecisionBoundary();
-
-            dataPoints.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-                ctx.fillStyle = p.label == 1 ? '#22d3ee' : '#f97316';
-                ctx.fill();
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
+        function initData() {
+            canvas.innerHTML = '';
+            points = [];
+            for (let i = 0; i < 30; i++) {
+                const label = Math.random() > 0.5 ? 'PLAY' : 'NO-PLAY';
+                const p = {
+                    id: i + 1,
+                    x: 50 + Math.random() * (canvas.clientWidth - 100),
+                    y: 50 + Math.random() * (canvas.clientHeight - 100),
+                    label: label,
+                    color: label === 'PLAY' ? '#10b981' : '#f43f5e'
+                };
+                points.push(p);
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 5);
+                c.setAttribute('fill', p.color); c.setAttribute('opacity', '0.3');
+                c.setAttribute('id', `p-${p.id}`);
+                canvas.appendChild(c);
+            }
         }
 
-        // Interaction
-        canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+        async function runSim() {
+            initData();
+            ledger.innerHTML = '';
+            const K = parseInt(document.getElementById('k-select').value);
 
-            // Add new point with random label for demo
-            const newLabel = Math.random() > 0.5 ? 1 : 0;
-            dataPoints.push({ x, y, label: newLabel });
-            log(`Added Point at ${Math.round(x)}, ${Math.round(y)}`);
-            render();
-        });
+            // Query Point
+            const q = { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 };
+            const qRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            qRect.setAttribute('x', q.x - 12); qRect.setAttribute('y', q.y - 12);
+            qRect.setAttribute('width', 24); qRect.setAttribute('height', 24);
+            qRect.setAttribute('fill', '#fff'); qRect.setAttribute('rx', '6');
+            qRect.setAttribute('id', 'query-node');
+            canvas.appendChild(qRect);
+            gsap.from(qRect, { scale: 5, opacity: 0, rotation: 90, duration: 1, ease: "expo.out" });
 
-        document.getElementById('k-slider').addEventListener('input', (e) => {
-            kValue = parseInt(e.target.value);
-            document.getElementById('k-val-display').innerText = kValue;
-            log(`K-Value changed to ${kValue}`);
-            render();
-        });
+            await new Promise(r => setTimeout(r, 1000));
 
-        document.getElementById('res-slider').addEventListener('input', (e) => {
-            resolution = parseInt(e.target.value);
-            document.getElementById('res-display').innerText = resolution + 'px';
-            render();
-        });
+            let calculations = points.map(p => {
+                const d = Math.sqrt(Math.pow(p.x - q.x, 2) + Math.pow(p.y - q.y, 2));
+                return { ...p, dist: d };
+            });
 
-        document.getElementById('toggle-boundary').addEventListener('click', () => {
-            showBoundary = !showBoundary;
-            render();
-        });
+            calculations.sort((a, b) => a.dist - b.dist);
+            const neighbors = calculations.slice(0, K);
 
-        window.addEventListener('resize', initCanvas);
-        initCanvas();
+            for (let i = 0; i < calculations.length; i++) {
+                const p = calculations[i];
+                const isN = i < K;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', q.x); line.setAttribute('y1', q.y);
+                line.setAttribute('x2', p.x); line.setAttribute('y2', p.y);
+                line.setAttribute('stroke', isN ? '#6366f1' : 'rgba(255,255,255,0.05)');
+                line.setAttribute('stroke-width', isN ? 2 : 1);
+                canvas.insertBefore(line, qRect);
+
+                if (isN) {
+                    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    txt.setAttribute('x', (p.x + q.x) / 2); txt.setAttribute('y', (p.y + q.y) / 2 - 5);
+                    txt.setAttribute('class', 'distance-label');
+                    txt.textContent = Math.round(p.dist) + "px";
+                    canvas.appendChild(txt);
+                    gsap.to(`#p-${p.id}`, { r: 8, opacity: 1, stroke: '#fff', strokeWidth: 2 });
+                }
+
+                const row = document.createElement('tr');
+                row.className = `transition-all duration-300 rounded-lg ${isN ? 'bg-indigo-600/20 border-l-4 border-indigo-500 text-white' : 'text-slate-500 opacity-40'}`;
+                row.innerHTML = `<td class="py-2 pl-3">POINT #${p.id}</td><td class="text-right pr-3">${p.dist.toFixed(1)}px</td>`;
+                ledger.appendChild(row);
+                if (isN) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                await new Promise(r => setTimeout(r, isN ? 500 : 30));
+            }
+
+            let plays = neighbors.filter(n => n.label === 'PLAY').length;
+            let noplays = K - plays;
+            document.getElementById('v-play').innerText = plays;
+            document.getElementById('v-noplay').innerText = noplays;
+
+            const winner = plays > noplays ? 'PLAY' : 'NO-PLAY';
+            const winColor = plays > noplays ? '#10b981' : '#f43f5e';
+
+            document.getElementById('decision-text').innerText = winner;
+            document.getElementById('decision-text').style.color = winColor;
+            document.getElementById('final-badge').innerText = "CALCULATED";
+            gsap.to('#query-node', { fill: winColor, scale: 1.5, duration: 0.8, ease: "bounce.out" });
+        }
+
+        window.onload = () => { initData(); };
     </script>
 </body>
 

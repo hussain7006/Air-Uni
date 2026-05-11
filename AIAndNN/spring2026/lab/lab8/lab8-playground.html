@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab 8 Playground | Perceptron Learning Algorithm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui'],
+              mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular'],
+            },
+            boxShadow: {
+              glow: '0 20px 60px rgba(45, 212, 191, 0.22)',
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.3.1",
+          "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+          "framer-motion": "https://esm.sh/framer-motion@11.11.9"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", ui-sans-serif, system-ui;
+        background:
+          radial-gradient(circle at top left, rgba(34, 211, 238, 0.24), transparent 28%),
+          radial-gradient(circle at top right, rgba(244, 114, 182, 0.18), transparent 26%),
+          linear-gradient(180deg, #07111f 0%, #06101c 36%, #030712 100%);
+        color: #e5eef8;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+        background-size: 42px 42px;
+        mask-image: radial-gradient(circle at center, black 58%, transparent 100%);
+        opacity: 0.18;
+      }
+
+      ::selection {
+        background: rgba(45, 212, 191, 0.25);
+        color: #fff;
+      }
+
+      .glass {
+        background: linear-gradient(180deg, rgba(13, 22, 38, 0.74), rgba(8, 14, 25, 0.54));
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+      }
+
+      .glow-border {
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(45, 212, 191, 0.08), 0 24px 70px rgba(0, 0, 0, 0.28);
+      }
+
+      .grid-lines {
+        background-image: linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+
+      .scrollbar::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .scrollbar::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.45);
+      }
+
+      .scrollbar::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(45,212,191,0.58), rgba(59,130,246,0.52));
+        border-radius: 999px;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular;
+      }
+
+      .soft-shadow {
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="module">
+      import React, { useEffect, useMemo, useState } from "react";
+      import { createRoot } from "react-dom/client";
+      import { AnimatePresence, motion } from "framer-motion";
+
+      const labHighlights = [
+        {
+          title: "Dataset",
+          body: "Iris dataset ki 100 rows use hoti hain: 50 setosa aur 50 versicolor. Pehle 4 features raw form me train hote hain.",
+          accent: "from-cyan-400 to-emerald-400",
+        },
+        {
+          title: "Visualization",
+          body: "Petal length aur sepal length ke 2D scatter se linearly separable pattern dikhaya jata hai.",
+          accent: "from-fuchsia-400 to-rose-400",
+        },
+        {
+          title: "Perceptron",
+          body: "Dot product + hard limiter + weight update rule use hota hai. Misclassification par weights shift hoti hain.",
+          accent: "from-amber-300 to-orange-400",
+        },
+        {
+          title: "Tasks",
+          body: "Iterations 1 to 10, features 4 to 3 to 2, aur Boolean OR problem ki implementation aur testing.",
+          accent: "from-sky-400 to-indigo-400",
+        },
+      ];
+
+      const pseudoCurve = {
+        4: [18, 12, 8, 6, 4, 3, 2, 2, 1, 1],
+        3: [24, 18, 14, 11, 9, 8, 6, 5, 5, 4],
+        2: [32, 28, 25, 22, 20, 18, 17, 16, 15, 15],
+      };
+
+      const tabs = [
+        { id: "overview", label: "Overview" },
+        { id: "perceptron", label: "Perceptron Playground" },
+        { id: "or", label: "Boolean OR Lab" },
+      ];
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function trainOrPerceptron() {
+        const samples = [
+          { x: [0, 0], y: 0 },
+          { x: [0, 1], y: 1 },
+          { x: [1, 0], y: 1 },
+          { x: [1, 1], y: 1 },
+        ];
+        let weights = [0, 0, 0];
+        const history = [];
+
+        for (let epoch = 0; epoch < 8; epoch += 1) {
+          let errors = 0;
+          for (const sample of samples) {
+            const input = [1, ...sample.x];
+            const score = weights.reduce((sum, weight, index) => sum + weight * input[index], 0);
+            const prediction = score > 0 ? 1 : 0;
+            const delta = sample.y - prediction;
+            if (delta !== 0) {
+              weights = weights.map((weight, index) => weight + delta * input[index]);
+              errors += 1;
+            }
+          }
+          history.push(errors);
+          if (errors === 0) break;
+        }
+
+        const predictions = samples.map((sample) => {
+          const input = [1, ...sample.x];
+          const score = weights.reduce((sum, weight, index) => sum + weight * input[index], 0);
+          return { sample: sample.x, actual: sample.y, predicted: score > 0 ? 1 : 0 };
+        });
+
+        return { weights, history, predictions };
+      }
+
+      function App() {
+        const [activeTab, setActiveTab] = useState("overview");
+        const [iterations, setIterations] = useState(10);
+        const [featureCount, setFeatureCount] = useState(4);
+        const [runPulse, setRunPulse] = useState(0);
+        const [learnRate, setLearnRate] = useState(0.2);
+        const [orResult, setOrResult] = useState(() => trainOrPerceptron());
+        const [hoveredCard, setHoveredCard] = useState(0);
+
+        const selectedCurve = pseudoCurve[featureCount];
+        const visibleCurve = selectedCurve.slice(0, iterations);
+        const bestValue = Math.max(...selectedCurve);
+        const currentMisclassification = visibleCurve[visibleCurve.length - 1];
+        const estimatedAccuracy = clamp(100 - currentMisclassification * 2.4, 58, 99);
+
+        useEffect(() => {
+          const id = setInterval(() => {
+            setHoveredCard((current) => (current + 1) % labHighlights.length);
+          }, 3400);
+          return () => clearInterval(id);
+        }, []);
+
+        const irisSummary = useMemo(() => {
+          const featureMap = {
+            4: "Full feature set",
+            3: "Reduced by 1 feature",
+            2: "Reduced by 2 features",
+          };
+
+          return {
+            label: featureMap[featureCount],
+            trend:
+              featureCount === 4
+                ? "High separability aur faster convergence expected."
+                : featureCount === 3
+                  ? "Boundary thori weaker hoti hai, errors slightly increase hotay hain."
+                  : "Too few features se overlap badhta hai, accuracy drop hoti hai.",
+          };
+        }, [featureCount]);
+
+        const restartDemo = () => {
+          setRunPulse((current) => current + 1);
+        };
+
+        const runOrDemo = () => {
+          setOrResult(trainOrPerceptron());
+          restartDemo();
+        };
+
+        return React.createElement(
+          "div",
+          { className: "relative mx-auto min-h-screen max-w-[1600px] px-4 py-6 sm:px-6 lg:px-10" },
+          React.createElement(
+            motion.div,
+            {
+              initial: { opacity: 0, y: 24 },
+              animate: { opacity: 1, y: 0 },
+              transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+              className: "relative overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-4 shadow-2xl shadow-cyan-950/20 sm:p-6 lg:p-8",
+            },
+            React.createElement("div", {
+              className: "pointer-events-none absolute inset-0 grid-lines opacity-40",
+            }),
+            React.createElement("div", {
+              className:
+                "pointer-events-none absolute -left-20 top-10 h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl",
+            }),
+            React.createElement("div", {
+              className:
+                "pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl",
+            }),
+            React.createElement("div", {
+              className:
+                "pointer-events-none absolute bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-sky-500/10 blur-3xl",
+            }),
+            React.createElement(
+              "header",
+              { className: "relative z-10 mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" },
+              React.createElement(
+                "div",
+                { className: "max-w-4xl" },
+                React.createElement(
+                  motion.div,
+                  {
+                    initial: { opacity: 0, x: -14 },
+                    animate: { opacity: 1, x: 0 },
+                    transition: { duration: 0.7, delay: 0.1 },
+                    className:
+                      "mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-emerald-200/90",
+                  },
+                  "Lab 8 Explorer"
+                ),
+                React.createElement(
+                  motion.h1,
+                  {
+                    initial: { opacity: 0, y: 18 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { duration: 0.85, delay: 0.18 },
+                    className:
+                      "max-w-4xl bg-gradient-to-r from-white via-cyan-100 to-sky-200 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl",
+                  },
+                  "Perceptron Learning Algorithm"
+                ),
+                React.createElement(
+                  motion.p,
+                  {
+                    initial: { opacity: 0, y: 18 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { duration: 0.85, delay: 0.26 },
+                    className:
+                      "mt-4 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg",
+                  },
+                  "Yeh playground Lab 8 ko visual aur interactive way me samjhata hai. Tailwind glass UI, Framer Motion transitions, aur ek live perceptron simulator ke sath aap easily dekh sakte ho ke iterations, features, aur OR gate ka learning flow kaise behave karta hai."
+                )
+              ),
+              React.createElement(
+                "div",
+                {
+                  className:
+                    "grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:max-w-none",
+                },
+                [
+                  ["100", "Iris samples"],
+                  ["4 → 3 → 2", "Feature reduction"],
+                  ["10", "Iterations max"],
+                ].map(([value, label], index) =>
+                  React.createElement(
+                    motion.div,
+                    {
+                      key: label,
+                      whileHover: { y: -4, scale: 1.01 },
+                      transition: { type: "spring", stiffness: 280, damping: 22 },
+                      className:
+                        "glass glow-border rounded-2xl px-5 py-4 text-left soft-shadow",
+                    },
+                    React.createElement(
+                      "div",
+                      { className: "text-2xl font-bold text-white" },
+                      value
+                    ),
+                    React.createElement(
+                      "div",
+                      { className: "mt-1 text-sm text-slate-400" },
+                      label
+                    )
+                  )
+                )
+              )
+            ),
+            React.createElement(
+              "main",
+              { className: "relative z-10 grid gap-6 xl:grid-cols-[1.05fr_1.25fr]" },
+              React.createElement(
+                "section",
+                { className: "space-y-6" },
+                React.createElement(
+                  "div",
+                  {
+                    className:
+                      "glass glow-border rounded-[28px] p-5 sm:p-6",
+                  },
+                  React.createElement(
+                    "div",
+                    { className: "mb-5 flex flex-wrap items-center justify-between gap-3" },
+                    React.createElement(
+                      "div",
+                      null,
+                      React.createElement(
+                        "div",
+                        { className: "text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200/80" },
+                        "Lab Structure"
+                      ),
+                      React.createElement(
+                        "h2",
+                        { className: "mt-2 text-2xl font-semibold text-white" },
+                        "Is lab me kya ho raha hai"
+                      )
+                    ),
+                    React.createElement(
+                      "div",
+                      { className: "rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-slate-300" },
+                      "Interactive explanation + testing"
+                    )
+                  ),
+                  React.createElement(
+                    "div",
+                    { className: "grid gap-4 sm:grid-cols-2" },
+                    labHighlights.map((item, index) =>
+                      React.createElement(
+                        motion.article,
+                        {
+                          key: item.title,
+                          onHoverStart: () => setHoveredCard(index),
+                          whileHover: { y: -6, scale: 1.01 },
+                          transition: { type: "spring", stiffness: 240, damping: 22 },
+                          className:
+                            "group relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/50 p-4",
+                        },
+                        React.createElement("div", {
+                          className:
+                            "absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100 " +
+                            item.accent +
+                            "",
+                        }),
+                        React.createElement(
+                          "div",
+                          { className: "relative z-10" },
+                          React.createElement(
+                            "div",
+                            { className: "mb-3 flex items-center gap-3" },
+                            React.createElement("div", {
+                              className:
+                                "h-11 w-11 rounded-2xl bg-white/10 ring-1 ring-white/10 backdrop-blur " +
+                                (hoveredCard === index ? "shadow-glow" : ""),
+                            }),
+                            React.createElement(
+                              "div",
+                              null,
+                              React.createElement(
+                                "div",
+                                { className: "text-lg font-semibold text-white" },
+                                item.title
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                index === 0
+                                  ? "Data"
+                                  : index === 1
+                                    ? "Plot"
+                                    : index === 2
+                                      ? "Learning"
+                                      : "Deliverables"
+                              )
+                            )
+                          ),
+                          React.createElement(
+                            "p",
+                            { className: "relative z-10 text-sm leading-7 text-slate-300" },
+                            item.body
+                          )
+                        )
+                      )
+                    )
+                  )
+                ),
+                React.createElement(
+                  "div",
+                  {
+                    className:
+                      "glass glow-border rounded-[28px] p-5 sm:p-6",
+                  },
+                  React.createElement(
+                    "div",
+                    { className: "flex flex-wrap items-center justify-between gap-4" },
+                    React.createElement(
+                      "div",
+                      null,
+                      React.createElement(
+                        "div",
+                        { className: "text-sm font-semibold uppercase tracking-[0.24em] text-fuchsia-200/80" },
+                        "Lab Tasks Snapshot"
+                      ),
+                      React.createElement(
+                        "h3",
+                        { className: "mt-2 text-2xl font-semibold text-white" },
+                        "Jo assignment me directly poocha gaya hai"
+                      )
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: runOrDemo,
+                        className:
+                          "rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/18",
+                      },
+                      "Refresh OR demo"
+                    )
+                  ),
+                  React.createElement(
+                    "div",
+                    { className: "mt-5 space-y-3" },
+                    [
+                      "Iterations 1 se 10 tak misclassified cases ka trend table aur graph me compare karna hai.",
+                      "4 features ko 3 aur phir 2 tak reduce karke accuracy ka change explain karna hai.",
+                      "Boolean OR problem ko perceptron se solve karke zero misclassification prove karna hai.",
+                    ].map((text) =>
+                      React.createElement(
+                        "div",
+                        {
+                          key: text,
+                          className:
+                            "rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-sm leading-7 text-slate-300",
+                        },
+                        text
+                      )
+                    )
+                  )
+                )
+              ),
+              React.createElement(
+                "section",
+                { className: "space-y-6" },
+                React.createElement(
+                  "div",
+                  {
+                    className:
+                      "glass glow-border overflow-hidden rounded-[28px]",
+                  },
+                  React.createElement(
+                    "div",
+                    { className: "border-b border-white/8 p-4 sm:p-5" },
+                    React.createElement(
+                      "div",
+                      { className: "flex flex-wrap items-center justify-between gap-4" },
+                      React.createElement(
+                        "div",
+                        null,
+                        React.createElement(
+                          "div",
+                          { className: "text-sm font-semibold uppercase tracking-[0.24em] text-emerald-200/80" },
+                          "Live Playground"
+                        ),
+                        React.createElement(
+                          "h3",
+                          { className: "mt-2 text-2xl font-semibold text-white" },
+                          "Browser me test karne wali workspace feel"
+                        )
+                      ),
+                      React.createElement(
+                        "div",
+                        { className: "inline-flex rounded-full border border-white/10 bg-slate-950/50 p-1" },
+                        tabs.map((tab) =>
+                          React.createElement(
+                            "button",
+                            {
+                              key: tab.id,
+                              onClick: () => setActiveTab(tab.id),
+                              className:
+                                "rounded-full px-4 py-2 text-sm font-medium transition " +
+                                (activeTab === tab.id
+                                  ? "bg-white text-slate-950 shadow-lg"
+                                  : "text-slate-300 hover:text-white"),
+                            },
+                            tab.label
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  React.createElement(
+                    "div",
+                    { className: "p-4 sm:p-5" },
+                    React.createElement(
+                      AnimatePresence,
+                      { mode: "wait" },
+                      activeTab === "overview" &&
+                        React.createElement(
+                          motion.div,
+                          {
+                            key: "overview",
+                            initial: { opacity: 0, x: 20 },
+                            animate: { opacity: 1, x: 0 },
+                            exit: { opacity: 0, x: -20 },
+                            transition: { duration: 0.35 },
+                            className: "space-y-5",
+                          },
+                          React.createElement(
+                            "div",
+                            { className: "grid gap-4 md:grid-cols-2" },
+                            React.createElement(
+                              "div",
+                              { className: "rounded-3xl border border-white/10 bg-slate-950/55 p-4" },
+                              React.createElement(
+                                "div",
+                                { className: "text-sm font-semibold text-cyan-200" },
+                                "Quick concept"
+                              ),
+                              React.createElement(
+                                "p",
+                                { className: "mt-3 text-sm leading-7 text-slate-300" },
+                                "Perceptron ek linear classifier hai. Woh dot product compute karta hai, phir hard threshold lagata hai. Agar output galat ho, weights update hoti hain taake next pass me boundary better ho jaye."
+                              )
+                            ),
+                            React.createElement(
+                              "div",
+                              { className: "rounded-3xl border border-white/10 bg-slate-950/55 p-4" },
+                              React.createElement(
+                                "div",
+                                { className: "text-sm font-semibold text-fuchsia-200" },
+                                "What to write in assignment"
+                              ),
+                              React.createElement(
+                                "p",
+                                { className: "mt-3 text-sm leading-7 text-slate-300" },
+                                "Table, graph, short observation, aur comparison comment. Agar feature count reduce hota hai, to separability usually weak hoti hai aur misclassifications barh sakti hain."
+                              )
+                            )
+                          ),
+                          React.createElement(
+                            "div",
+                            { className: "rounded-3xl border border-cyan-300/10 bg-cyan-300/5 p-4" },
+                            React.createElement(
+                              "div",
+                              { className: "flex flex-wrap items-center justify-between gap-4" },
+                              React.createElement(
+                                "div",
+                                null,
+                                React.createElement(
+                                  "div",
+                                  { className: "text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200/80" },
+                                  "Current interpretation"
+                                ),
+                                React.createElement(
+                                  "div",
+                                  { className: "mt-2 text-xl font-semibold text-white" },
+                                  irisSummary.label
+                                )
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "text-right" },
+                                React.createElement(
+                                  "div",
+                                  { className: "text-xs uppercase tracking-[0.18em] text-slate-400" },
+                                  "Expected trend"
+                                ),
+                                React.createElement(
+                                  "div",
+                                  { className: "mt-2 max-w-xl text-sm leading-7 text-slate-300" },
+                                  irisSummary.trend
+                                )
+                              )
+                            )
+                          )
+                        ),
+                      activeTab === "perceptron" &&
+                        React.createElement(
+                          motion.div,
+                          {
+                            key: "perceptron",
+                            initial: { opacity: 0, x: 20 },
+                            animate: { opacity: 1, x: 0 },
+                            exit: { opacity: 0, x: -20 },
+                            transition: { duration: 0.35 },
+                            className: "grid gap-5 xl:grid-cols-[1.15fr_0.85fr]",
+                          },
+                          React.createElement(
+                            "div",
+                            { className: "space-y-5" },
+                            React.createElement(
+                              "div",
+                              { className: "rounded-3xl border border-white/10 bg-slate-950/55 p-4 sm:p-5" },
+                              React.createElement(
+                                "div",
+                                { className: "flex flex-wrap items-center justify-between gap-4" },
+                                React.createElement(
+                                  "div",
+                                  null,
+                                  React.createElement(
+                                    "div",
+                                    { className: "text-sm font-semibold uppercase tracking-[0.18em] text-emerald-200/80" },
+                                    "Iteration control"
+                                  ),
+                                  React.createElement(
+                                    "h4",
+                                    { className: "mt-2 text-xl font-semibold text-white" },
+                                    "1 se 10 iterations ka effect"
+                                  )
+                                ),
+                                React.createElement(
+                                  "button",
+                                  {
+                                    onClick: restartDemo,
+                                    className:
+                                      "rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10",
+                                  },
+                                  "Re-run"
+                                )
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "mt-5 grid gap-5 lg:grid-cols-[1fr_0.78fr]" },
+                                React.createElement(
+                                  "div",
+                                  { className: "space-y-4" },
+                                  React.createElement(
+                                    "div",
+                                    { className: "flex items-center justify-between text-sm text-slate-300" },
+                                    React.createElement("span", null, "Iterations"),
+                                    React.createElement("span", { className: "mono text-cyan-200" }, iterations)
+                                  ),
+                                  React.createElement("input", {
+                                    type: "range",
+                                    min: 1,
+                                    max: 10,
+                                    value: iterations,
+                                    onInput: (event) => setIterations(Number(event.target.value)),
+                                    className:
+                                      "h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-cyan-400",
+                                  }),
+                                  React.createElement(
+                                    "div",
+                                    { className: "grid gap-3 sm:grid-cols-3" },
+                                    [1, 3, 5].map((value) =>
+                                      React.createElement(
+                                        "button",
+                                        {
+                                          key: value,
+                                          onClick: () => setIterations(value),
+                                          className:
+                                            "rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-white",
+                                        },
+                                        `Jump to ${value}`
+                                      )
+                                    )
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "rounded-3xl border border-white/10 bg-black/20 p-4" },
+                                    React.createElement(
+                                      "div",
+                                      { className: "flex items-center justify-between" },
+                                      React.createElement(
+                                        "div",
+                                        null,
+                                        React.createElement(
+                                          "div",
+                                          { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                          "Live estimate"
+                                        ),
+                                        React.createElement(
+                                          "div",
+                                          { className: "mt-2 text-3xl font-bold text-white" },
+                                          `${estimatedAccuracy.toFixed(0)}%`
+                                        )
+                                      ),
+                                      React.createElement(
+                                        "div",
+                                        { className: "text-right" },
+                                        React.createElement(
+                                          "div",
+                                          { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                          "Misclassified"
+                                        ),
+                                        React.createElement(
+                                          "div",
+                                          { className: "mt-2 text-3xl font-bold text-rose-300" },
+                                          currentMisclassification
+                                        )
+                                      )
+                                    ),
+                                    React.createElement(
+                                      "div",
+                                      { className: "mt-4 h-3 overflow-hidden rounded-full bg-slate-800" },
+                                      React.createElement(motion.div, {
+                                        key: `${runPulse}-${featureCount}-${iterations}`,
+                                        initial: { width: 0 },
+                                        animate: { width: `${estimatedAccuracy}%` },
+                                        transition: { duration: 0.7, ease: "easeOut" },
+                                        className:
+                                          "h-full rounded-full bg-gradient-to-r from-cyan-400 via-emerald-300 to-sky-500",
+                                      })
+                                    ),
+                                    React.createElement(
+                                      "div",
+                                      { className: "mt-4 text-sm leading-7 text-slate-300" },
+                                      "Agar iterations barhti hain, perceptron ka error generally kam hota hai. Agar data linearly separable ho to boundary dhire dhire converge karti hai."
+                                    )
+                                  )
+                                ),
+                                React.createElement(
+                                  "div",
+                                  { className: "rounded-3xl border border-white/10 bg-slate-950/65 p-4" },
+                                  React.createElement(
+                                    "div",
+                                    { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                    "Iteration chart"
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "mt-4 flex h-64 items-end gap-2 rounded-2xl bg-gradient-to-b from-white/5 to-transparent p-3" },
+                                    selectedCurve.map((count, index) =>
+                                      React.createElement(
+                                        motion.div,
+                                        {
+                                          key: index,
+                                          initial: { scaleY: 0 },
+                                          animate: { scaleY: index < iterations ? 1 : 0.2 },
+                                          transition: { duration: 0.35, delay: index * 0.03 },
+                                          className:
+                                            "relative flex-1 origin-bottom overflow-hidden rounded-t-2xl bg-slate-800/60",
+                                        },
+                                        React.createElement(motion.div, {
+                                          initial: { height: 0 },
+                                          animate: {
+                                            height: `${(count / bestValue) * 100}%`,
+                                          },
+                                          transition: { duration: 0.6, delay: index * 0.03 },
+                                          className:
+                                            "absolute bottom-0 left-0 right-0 rounded-t-2xl bg-gradient-to-t from-cyan-400 via-emerald-400 to-sky-400",
+                                        }),
+                                        React.createElement(
+                                          "div",
+                                          {
+                                            className:
+                                              "absolute inset-x-0 bottom-0 flex items-end justify-center pb-2 text-[11px] text-white/90",
+                                          },
+                                          count
+                                        ),
+                                        React.createElement(
+                                          "div",
+                                          {
+                                            className:
+                                              "absolute inset-x-0 top-2 flex items-start justify-center text-[11px] text-slate-400",
+                                          },
+                                          index + 1
+                                        )
+                                      )
+                                    )
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-6 text-slate-300" },
+                                    "Ye graph conceptually dikhata hai ke 1 to 10 epochs ke darmiyan misclassification ka trend kaise down hota hai. Actual values aap apne notebook se generate karke yahan replace bhi kar sakte ho."
+                                  )
+                                )
+                              )
+                            ),
+                            React.createElement(
+                              "div",
+                              { className: "rounded-3xl border border-white/10 bg-slate-950/55 p-4 sm:p-5" },
+                              React.createElement(
+                                "div",
+                                { className: "flex flex-wrap items-center justify-between gap-4" },
+                                React.createElement(
+                                  "div",
+                                  null,
+                                  React.createElement(
+                                    "div",
+                                    { className: "text-sm font-semibold uppercase tracking-[0.18em] text-sky-200/80" },
+                                    "Feature reduction"
+                                  ),
+                                  React.createElement(
+                                    "h4",
+                                    { className: "mt-2 text-xl font-semibold text-white" },
+                                    "4 feature se 2 feature tak"
+                                  )
+                                ),
+                                React.createElement(
+                                  "div",
+                                  { className: "flex gap-2" },
+                                  [4, 3, 2].map((count) =>
+                                    React.createElement(
+                                      "button",
+                                      {
+                                        key: count,
+                                        onClick: () => setFeatureCount(count),
+                                        className:
+                                          "rounded-full border px-4 py-2 text-sm transition " +
+                                          (featureCount === count
+                                            ? "border-cyan-300/40 bg-cyan-300/15 text-cyan-100"
+                                            : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"),
+                                      },
+                                      `${count} features`
+                                    )
+                                  )
+                                )
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]" },
+                                React.createElement(
+                                  "div",
+                                  { className: "rounded-3xl border border-white/10 bg-black/20 p-4" },
+                                  React.createElement(
+                                    "div",
+                                    { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                    "Selected mode"
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "mt-2 text-2xl font-bold text-white" },
+                                    irisSummary.label
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "mt-3 h-3 overflow-hidden rounded-full bg-slate-800" },
+                                    React.createElement(motion.div, {
+                                      key: `feature-${featureCount}`,
+                                      initial: { width: 0 },
+                                      animate: { width: `${(featureCount / 4) * 100}%` },
+                                      transition: { duration: 0.6 },
+                                      className:
+                                        "h-full rounded-full bg-gradient-to-r from-fuchsia-400 via-rose-400 to-amber-300",
+                                    })
+                                  ),
+                                  React.createElement(
+                                    "p",
+                                    { className: "mt-4 text-sm leading-7 text-slate-300" },
+                                    irisSummary.trend
+                                  )
+                                ),
+                                React.createElement(
+                                  "div",
+                                  { className: "rounded-3xl border border-white/10 bg-black/20 p-4" },
+                                  React.createElement(
+                                    "div",
+                                    { className: "flex items-center justify-between" },
+                                    React.createElement(
+                                      "div",
+                                      { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                      "Concept summary"
+                                    ),
+                                    React.createElement(
+                                      "div",
+                                      { className: "mono text-xs text-cyan-200" },
+                                      `${iterations} epochs`
+                                    )
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "mt-4 grid gap-2" },
+                                    [
+                                      ["Accuracy", `${estimatedAccuracy.toFixed(0)}%`],
+                                      ["Trend", currentMisclassification <= 3 ? "Stable" : "Noisy"],
+                                      ["Learning rate", learnRate.toFixed(1)],
+                                    ].map(([label, value]) =>
+                                      React.createElement(
+                                        "div",
+                                        {
+                                          key: label,
+                                          className:
+                                            "flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm",
+                                        },
+                                        React.createElement("span", { className: "text-slate-400" }, label),
+                                        React.createElement("span", { className: "mono text-white" }, value)
+                                      )
+                                    )
+                                  ),
+                                  React.createElement(
+                                    "input",
+                                    {
+                                      type: "range",
+                                      min: 0.1,
+                                      max: 1,
+                                      step: 0.1,
+                                      value: learnRate,
+                                      onInput: (event) => setLearnRate(Number(event.target.value)),
+                                      className:
+                                        "mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-fuchsia-400",
+                                    }
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        ),
+                      activeTab === "or" &&
+                        React.createElement(
+                          motion.div,
+                          {
+                            key: "or",
+                            initial: { opacity: 0, x: 20 },
+                            animate: { opacity: 1, x: 0 },
+                            exit: { opacity: 0, x: -20 },
+                            transition: { duration: 0.35 },
+                            className: "grid gap-5 xl:grid-cols-[0.95fr_1.05fr]",
+                          },
+                          React.createElement(
+                            "div",
+                            { className: "space-y-5" },
+                            React.createElement(
+                              "div",
+                              { className: "rounded-3xl border border-white/10 bg-slate-950/55 p-4 sm:p-5" },
+                              React.createElement(
+                                "div",
+                                { className: "text-sm font-semibold uppercase tracking-[0.18em] text-amber-200/80" },
+                                "Boolean OR training"
+                              ),
+                              React.createElement(
+                                "h4",
+                                { className: "mt-2 text-2xl font-semibold text-white" },
+                                "Perceptron should learn all 4 samples"
+                              ),
+                              React.createElement(
+                                "p",
+                                { className: "mt-3 text-sm leading-7 text-slate-300" },
+                                "Yeh part direct lab requirement ko demonstrate karta hai. OR gate linear separable hai, is liye perceptron ko eventually zero misclassification mil jati hai."
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "mt-5 grid gap-3 sm:grid-cols-3" },
+                                [
+                                  ["00 → 0", "False false"],
+                                  ["01 → 1", "One true"],
+                                  ["10 → 1", "Other true"],
+                                ].map(([value, label]) =>
+                                  React.createElement(
+                                    "div",
+                                    {
+                                      key: value,
+                                      className:
+                                        "rounded-2xl border border-white/10 bg-white/5 px-4 py-3",
+                                    },
+                                    React.createElement("div", { className: "mono text-white" }, value),
+                                    React.createElement("div", { className: "mt-1 text-xs uppercase tracking-[0.18em] text-slate-400" }, label)
+                                  )
+                                )
+                              )
+                            ),
+                            React.createElement(
+                              "div",
+                              { className: "rounded-3xl border border-white/10 bg-slate-950/55 p-4 sm:p-5" },
+                              React.createElement(
+                                "div",
+                                { className: "flex flex-wrap items-center justify-between gap-4" },
+                                React.createElement(
+                                  "div",
+                                  null,
+                                  React.createElement(
+                                    "div",
+                                    { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                    "Animation state"
+                                  ),
+                                  React.createElement(
+                                    "div",
+                                    { className: "mt-2 text-2xl font-bold text-white" },
+                                    `Weights: [${orResult.weights.join(", ")}]`
+                                  )
+                                ),
+                                React.createElement(
+                                  motion.button,
+                                  {
+                                    onClick: runOrDemo,
+                                    whileTap: { scale: 0.96 },
+                                    className:
+                                      "rounded-full bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-orange-500/30",
+                                  },
+                                  "Train OR perceptron"
+                                )
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "mt-5 grid gap-3" },
+                                orResult.predictions.map((row) =>
+                                  React.createElement(
+                                    motion.div,
+                                    {
+                                      key: row.sample.join(""),
+                                      initial: { opacity: 0, y: 10 },
+                                      animate: { opacity: 1, y: 0 },
+                                      transition: { duration: 0.28 },
+                                      className:
+                                        "flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm",
+                                    },
+                                    React.createElement(
+                                      "span",
+                                      { className: "mono text-slate-200" },
+                                      `${row.sample[0]} , ${row.sample[1]}`
+                                    ),
+                                    React.createElement(
+                                      "span",
+                                      { className: "text-slate-400" },
+                                      `actual ${row.actual}`
+                                    ),
+                                    React.createElement(
+                                      "span",
+                                      {
+                                        className:
+                                          "rounded-full px-3 py-1 font-semibold " +
+                                          (row.actual === row.predicted
+                                            ? "bg-emerald-400/15 text-emerald-200"
+                                            : "bg-rose-400/15 text-rose-200"),
+                                      },
+                                      `pred ${row.predicted}`
+                                    )
+                                  )
+                                )
+                              ),
+                              React.createElement(
+                                "div",
+                                { className: "mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-6 text-slate-300" },
+                                `Epoch history: ${orResult.history.join(" → ")} | Yeh sequence show karta hai ke training ke baad misclassification zero par aa sakti hai.`
+                              )
+                            )
+                          ),
+                          React.createElement(
+                            "div",
+                            { className: "rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/70 to-slate-900/50 p-4 sm:p-5" },
+                            React.createElement(
+                              "div",
+                              { className: "text-sm font-semibold uppercase tracking-[0.18em] text-emerald-200/80" },
+                              "Why OR works"
+                            ),
+                            React.createElement(
+                              "div",
+                              { className: "mt-4 grid gap-4" },
+                              [
+                                "OR gate linearly separable hai, is liye perceptron isko solve kar sakta hai.",
+                                "Training ke baad final weights boundary ko aise place karti hain ke 0,0 alag aur baqi positive inputs alag classify hon.",
+                                "Aap is tab ko lab submission ke explanation ke sath screenshot kar sakte ho to show learning proof.",
+                              ].map((text, index) =>
+                                React.createElement(
+                                  motion.div,
+                                  {
+                                    key: text,
+                                    initial: { opacity: 0, x: 14 },
+                                    animate: { opacity: 1, x: 0 },
+                                    transition: { duration: 0.35, delay: index * 0.08 },
+                                    className:
+                                      "rounded-3xl border border-white/10 bg-white/5 p-4 text-sm leading-7 text-slate-300",
+                                  },
+                                  text
+                                )
+                              )
+                            ),
+                            React.createElement(
+                              "div",
+                              { className: "mt-5 overflow-hidden rounded-3xl border border-cyan-300/10 bg-cyan-300/5 p-4" },
+                              React.createElement(
+                                motion.div,
+                                {
+                                  key: runPulse,
+                                  initial: { opacity: 0, scale: 0.96 },
+                                  animate: { opacity: 1, scale: 1 },
+                                  transition: { duration: 0.45 },
+                                  className: "rounded-2xl border border-white/10 bg-slate-950/60 p-4",
+                                },
+                                React.createElement(
+                                  "div",
+                                  { className: "text-xs uppercase tracking-[0.22em] text-slate-400" },
+                                  "For demo use"
+                                ),
+                                React.createElement(
+                                  "div",
+                                  { className: "mt-2 text-lg font-semibold text-white" },
+                                  "Aap is page ko browser me open karke live playground ki tarah use kar sakte ho"
+                                ),
+                                React.createElement(
+                                  "p",
+                                  { className: "mt-3 text-sm leading-7 text-slate-300" },
+                                  "Ye page explanation, iteration control, feature reduction preview, aur OR gate training ko ek hi polished interface me rakhta hai."
+                                )
+                              )
+                            )
+                          )
+                        )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        );
+      }
+
+      createRoot(document.getElementById("root")).render(React.createElement(App));
+    </script>
+  </body>
+</html>
