@@ -34,8 +34,8 @@ label = le.fit_transform(play)
 print("Play Label Encoded:", label)
 
 # Combining weather and temp into a single list of tuples (features)
-features = list(zip(weather_encoded, temp_encoded))
-print("Combined Features:", features)
+combineFeatures = list(zip(weather_encoded, temp_encoded))
+print("Combined combineFeatures:", combineFeatures)
 
 # Importing KNN Classifier from sklearn
 from sklearn.neighbors import KNeighborsClassifier
@@ -43,8 +43,8 @@ from sklearn.neighbors import KNeighborsClassifier
 # Defining the model with K=3 neighbors
 model = KNeighborsClassifier(n_neighbors=3)
 
-# Training the model using the encoded features and labels
-model.fit(features, label)
+# Training the model using the encoded combineFeatures and labels
+model.fit(combineFeatures, label)
 
 # Making a prediction for a new scenario [0, 2]
 # Note: 0 and 2 are encoded values for weather and temperature
