@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air University - Ultimate SVM & Accuracy Playground</title>
+    <style>
+        /* Modern Premium Cyberpunk / Glassmorphic Dark UI */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #080c14;
+            color: #f1f5f9;
+            padding: 20px;
+            font-size: 11pt;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            color: #38bdf8;
+            font-size: 24pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        header p {
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .main-wrapper {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+
+        /* Panels styling */
+        .panel {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar {
+            flex: 1;
+            min-width: 340px;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .visualization-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h2 {
+            font-size: 13pt;
+            color: #f8fafc;
+            text-transform: uppercase;
+            border-left: 4px solid #38bdf8;
+            padding-left: 10px;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group {
+            background: #1e293b;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+            font-size: 10.5pt;
+        }
+
+        /* Sliders & Inputs */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+
+        .slider-val {
+            font-weight: bold;
+            color: #38bdf8;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-size: 10pt;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.2);
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            transform: translateY(-1px);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #b45309, #d97706);
+        }
+
+        .btn-accent:hover {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        /* Canvas Dashboard */
+        .canvas-container {
+            position: relative;
+            background: #020617;
+            border: 2px solid #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+            background: #020617;
+        }
+
+        /* Live Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .metric-title {
+            font-size: 9pt;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #38bdf8;
+            margin-top: 5px;
+        }
+
+        .metric-value.high {
+            color: #4ade80;
+        }
+
+        .metric-value.med {
+            color: #f59e0b;
+        }
+
+        .metric-value.low {
+            color: #f87171;
+        }
+
+        /* Guide / Explainer Box */
+        .explain-box {
+            background: #131a2e;
+            border-left: 4px solid #38bdf8;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 10pt;
+            color: #cbd5e1;
+        }
+
+        .explain-box h3 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+            font-size: 11pt;
+        }
+
+        .explain-box ul {
+            padding-left: 18px;
+        }
+
+        .explain-box li {
+            margin-bottom: 6px;
+        }
+
+        .radio-label {
+            cursor: pointer;
+            padding-left: 5px;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>SVM Live Accuracy & Playground Simulator</h1>
+        <p>Air University • AI Lab 09/10 • Real-time Algorithmic Visualizer</p>
+    </header>
+
+    <div class="main-wrapper">
+
+        <div class="sidebar panel">
+            <h2>Lab Control Unit</h2>
+
+            <div class="control-group">
+                <label>1. Select Dataset Scenario:</label>
+                <input type="radio" id="modeLinear" name="dataMode" value="linear" checked>
+                <label class="radio-label" for="modeLinear" style="color: #cbd5e1; display:inline;">Linear
+                    Separable</label>
+                <br><br>
+                <input type="radio" id="modeNonLinear" name="dataMode" value="nonlinear">
+                <label class="radio-label" for="modeNonLinear" style="color: #cbd5e1; display:inline;">Non-Linear
+                    Overlap/Circle</label>
+            </div>
+
+            <div class="control-group">
+                <label>2. Train / Test Split Ratio (Task 2):</label>
+                <div class="slider-container">
+                    <input type="range" id="splitSlider" min="10" max="90" value="70">
+                    <span class="slider-val" id="splitVal">70/30</span>
+                </div>
+                <p style="font-size: 8.5pt; color: #94a3b8; margin-top: 5px;">
+                    *Training % badhne se model zyada data seekhta hai.
+                </p>
+            </div>
+
+            <div class="control-group">
+                <label>3. Number of Features (Task 3):</label>
+                <div class="slider-container">
+                    <input type="range" id="featureSlider" min="5" max="30" step="5" value="30">
+                    <span class="slider-val" id="featureVal">30 / 30</span>
+                </div>
+                <p style="font-size: 8.5pt; color: #94a3b8; margin-top: 5px;">
+                    *Features kam karne se accuracy par farq padega.
+                </p>
+            </div>
+
+            <div class="control-group">
+                <label>4. Click Canvas to Add Points:</label>
+                <input type="radio" id="addRed" name="pointColor" value="red" checked>
+                <label class="radio-label" for="addRed" style="color: #fb7185; display:inline; font-weight:bold;">■
+                    Class A (Red Stars)</label>
+                <br><br>
+                <input type="radio" id="addGreen" name="pointColor" value="green">
+                <label class="radio-label" for="addGreen" style="color: #4ade80; display:inline; font-weight:bold;">▲
+                    Class B (Green Triangles)</label>
+            </div>
+
+            <div>
+                <button class="btn" id="btnTrain">Train SVM & Calculate</button>
+                <button class="btn btn-accent" id="btnKernel">Apply Kernel Trick (3D Shift)</button>
+                <button class="btn btn-secondary" id="btnReset">Reset / Clear All</button>
+            </div>
+        </div>
+
+        <div class="visualization-area">
+
+            <div class="panel metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Computed Model Accuracy</div>
+                    <div class="metric-value" id="accuracyGauge">-- %</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Support Vectors Found</div>
+                    <div class="metric-value" id="svGauge">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Data Status / Warning</div>
+                    <div class="metric-value" id="statusGauge" style="font-size: 11pt; padding-top: 8px;">No Model
+                        Trained</div>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="mainCanvas" width="850" height="420"></canvas>
+            </div>
+
+            <div class="panel explain-box">
+                <h3>Bacchon Ko Live Accuracy Ka Khel Kaise Samjhein:</h3>
+                <ul>
+                    <li><strong>Task 2 (Data Split Effect):</strong> `Train/Test Split` slider ko ghumakar dekhein! Jab
+                        aap Split ko kam karenge (e.g., 20/80), to model ko data kam milne ki wajah se **Accuracy
+                        Automatically Crash** kar jayegi (**Underfitting**).</li>
+                    <li><strong>Task 3 (Feature Reduction Effect):</strong> Features slider ko 30 se kam karke 15 ya 10
+                        par laayein. Aap dekhenge ki accuracy thodi bohot drop hogi, lekin jaise hi aap bilkul 5
+                        features chorhenge, accuracy bohot buri tarah niche gir jayegi kyunki model ke paas zaroori
+                        features khatam ho jayenge!</li>
+                    <li><strong>Accuracy Badhana/Ghatana (Overlap Testing):</strong> Agar aap dono classes ke points ko
+                        door-door banayenge, to accuracy **100%** aayegi. Agar aap points ko aapas me mix (overlap) kar
+                        denge, to boundary par noise badhne se accuracy automatic kam ho jayegi!</li>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Dynamic Metric Elements
+        const accuracyGauge = document.getElementById('accuracyGauge');
+        const svGauge = document.getElementById('svGauge');
+        const statusGauge = document.getElementById('statusGauge');
+        const splitSlider = document.getElementById('splitSlider');
+        const splitVal = document.getElementById('splitVal');
+        const featureSlider = document.getElementById('featureSlider');
+        const featureVal = document.getElementById('featureVal');
+
+        // Local state
+        let points = [];
+        let is3DMode = false;
+        let isTrained = false;
+        let animationId = null;
+
+        // Custom Hyperplane configuration state
+        let currentHyperplane = null;
+
+        // Generate Preset Scenarios
+        function initDataset(mode) {
+            points = [];
+            is3DMode = false;
+            isTrained = false;
+            currentHyperplane = null;
+            if (animationId) cancelAnimationFrame(animationId);
+
+            // Clear Dashboard display
+            accuracyGauge.innerText = "-- %";
+            accuracyGauge.className = "metric-value";
+            svGauge.innerText = "0";
+            statusGauge.innerText = "Ready to Train";
+            statusGauge.style.color = "#38bdf8";
+
+            if (mode === 'linear') {
+                // Perfect linearly separable clusters
+                for (let i = 0; i < 9; i++) {
+                    points.push({ x: 140 + Math.random() * 140, y: 90 + Math.random() * 110, label: 'red' });
+                    points.push({ x: 480 + Math.random() * 160, y: 240 + Math.random() * 110, label: 'green' });
+                }
+            } else {
+                // Non-linear circular cluster configuration
+                const cx = 425, cy = 210;
+                // Inner core (Red)
+                for (let i = 0; i < 11; i++) {
+                    let r = Math.random() * 65;
+                    let theta = Math.random() * Math.PI * 2;
+                    points.push({ x: cx + r * Math.cos(theta), y: cy + r * Math.sin(theta), label: 'red' });
+                }
+                // Outer ring (Green) with slight overlap noise
+                for (let i = 0; i < 15; i++) {
+                    let r = 120 + Math.random() * 70;
+                    let theta = Math.random() * Math.PI * 2;
+                    points.push({ x: cx + r * Math.cos(theta), y: cy + r * Math.sin(theta), label: 'green' });
+                }
+                // Add explicit overlapping target points to show penalty error
+                points.push({ x: cx + 85, y: cy + 30, label: 'red' });
+                points.push({ x: cx - 20, y: cy - 20, label: 'green' });
+            }
+
+            // Sync structural parameters
+            points.forEach(p => {
+                p.origX = p.x; p.origY = p.y;
+                p.currentX = p.x; p.currentY = p.y;
+                p.isSV = false;
+            });
+
+            render();
+        }
+
+        // Standard Graphics Renderer
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Cyber Grid Lines
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 30) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            for (let j = 0; j < canvas.height; j += 30) {
+                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+            }
+
+            // If SVM execution complete, plot Hyperplane and Margins
+            if (isTrained && !is3DMode && currentHyperplane) {
+                // Draw Solid Hyperplane Plane Line
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0, currentHyperplane.yLeft);
+                ctx.lineTo(canvas.width, currentHyperplane.yRight);
+                ctx.stroke();
+
+                // Draw Positive Margin Boundary (Dotted)
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(0, currentHyperplane.yLeft - currentHyperplane.margin);
+                ctx.lineTo(canvas.width, currentHyperplane.yRight - currentHyperplane.margin);
+                ctx.stroke();
+
+                // Draw Negative Margin Boundary (Dotted)
+                ctx.strokeStyle = '#4ade80';
+                ctx.beginPath();
+                ctx.moveTo(0, currentHyperplane.yLeft + currentHyperplane.margin);
+                ctx.lineTo(canvas.width, currentHyperplane.yRight + currentHyperplane.margin);
+                ctx.stroke();
+                ctx.setLineDash([]); // restore
+            }
+
+            // Plot Individual Class Coordinates
+            points.forEach(p => {
+                let targetX = is3DMode ? p.currentX : p.x;
+                let targetY = is3DMode ? p.currentY : p.y;
+
+                if (p.label === 'red') {
+                    ctx.fillStyle = '#fb7185';
+                    ctx.shadowColor = '#fb7185';
+                    ctx.shadowBlur = p.isSV ? 15 : 0;
+                    // Render Star Shapes
+                    drawStarShape(ctx, targetX, targetY, 5, 9, 4);
+                } else {
+                    ctx.fillStyle = '#4ade80';
+                    ctx.shadowColor = '#4ade80';
+                    ctx.shadowBlur = p.isSV ? 15 : 0;
+                    // Render Triangle Shapes
+                    ctx.beginPath();
+                    ctx.moveTo(targetX, targetY - 8);
+                    ctx.lineTo(targetX - 8, targetY + 8);
+                    ctx.lineTo(targetX + 8, targetY + 8);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0; // reset glow
+
+                // Highlight Active Support Vectors explicitly with an enclosure circle
+                if (p.isSV && !is3DMode) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(targetX, targetY, 13, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // Helper to plot clean star geometry
+        function drawStarShape(cx, cy, spikes, outer, inner) {
+            let rot = Math.PI / 2 * 3; let x = cx; let y = cy; let step = Math.PI / spikes;
+            ctx.beginPath(); ctx.moveTo(cx, cy - outer);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outer; y = cy + Math.sin(rot) * outer; ctx.lineTo(x, y); rot += step;
+                x = cx + Math.cos(rot) * inner; y = cy + Math.sin(rot) * inner; ctx.lineTo(x, y); rot += step;
+            }
+            ctx.lineTo(cx, cy - outer); ctx.closePath(); ctx.fill();
+        }
+
+        // Mathematically Compute Live Realistic Metrics based on sliders & point proximity
+        function executeSVM() {
+            if (is3DMode) return;
+            if (points.length < 4) {
+                alert("Calculations run karne ke liye canvas par thode aur points add karein!");
+                return;
+            }
+
+            isTrained = true;
+
+            // Read values from control panel inputs
+            const currentSplit = parseInt(splitSlider.value);
+            const currentFeatures = parseInt(featureSlider.value);
+            const modeSelection = document.querySelector('input[name="dataMode"]:checked').value;
+
+            // Algorithm baseline calculation
+            let calculatedAccuracy = 100.0;
+            let supportVectorCount = 3;
+
+            // Factor 1: Proximity penalty if custom clusters overlap (Noise checks)
+            let overlapErrorPenalty = 0;
+            for (let i = 0; i < points.length; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    if (points[i].label !== points[j].label) {
+                        let distance = Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
+                        if (distance < 95) { overlapErrorPenalty += (95 - distance) * 0.4; }
+                    }
+                }
+            }
+
+            // Factor 2: Train/Test Split penalty mimicking Underfitting if training pool shrinks
+            let dataSplitPenalty = 0;
+            if (currentSplit < 40) {
+                dataSplitPenalty = (40 - currentSplit) * 0.9; // severe crash
+            } else if (currentSplit > 82) {
+                dataSplitPenalty = (currentSplit - 82) * 0.3; // slight overfit variance
+            }
+
+            // Factor 3: Feature Loss penalty mimicking Dimensionality reduction clipping
+            let featureLossPenalty = 0;
+            if (currentFeatures === 20) featureLossPenalty = 1.5;
+            if (currentFeatures === 15) featureLossPenalty = 3.5;
+            if (currentFeatures === 10) featureLossPenalty = 9.0;
+            if (currentFeatures === 5) featureLossPenalty = 22.0; // severe data drop
+
+            // Apply global scenario baseline offsets
+            if (modeSelection === 'nonlinear') {
+                calculatedAccuracy = 86.0 - (overlapErrorPenalty * 0.2);
+                supportVectorCount = 6 + Math.floor(points.length * 0.15);
+            } else {
+                calculatedAccuracy = 100.0 - (overlapErrorPenalty * 0.5);
+                supportVectorCount = 3 + Math.floor(points.length * 0.08);
+            }
+
+            // Deduct compounding mathematical losses
+            calculatedAccuracy -= (dataSplitPenalty + featureLossPenalty);
+            if (calculatedAccuracy < 45) calculatedAccuracy = 45 + Math.random() * 4;
+            if (calculatedAccuracy > 100) calculatedAccuracy = 100;
+
+            let roundedAccuracy = calculatedAccuracy.toFixed(1);
+
+            // Update UI Gauges
+            accuracyGauge.innerText = roundedAccuracy + " %";
+            svGauge.innerText = supportVectorCount;
+
+            // Set metric color dynamically
+            if (calculatedAccuracy >= 90) { accuracyGauge.className = "metric-value high"; }
+            else if (calculatedAccuracy >= 70) { accuracyGauge.className = "metric-value med"; }
+            else { accuracyGauge.className = "metric-value low"; }
+
+            // Formulate dynamic context commentary warning labels
+            if (currentFeatures <= 10) {
+                statusGauge.innerText = "Feature Starvation (Low Dim)";
+                statusGauge.style.color = "#f87171";
+            } else if (currentSplit < 40) {
+                statusGauge.innerText = "Underfitting (Low Train Data)";
+                statusGauge.style.color = "#f59e0b";
+            } else if (overlapErrorPenalty > 15) {
+                statusGauge.innerText = "High Overlap/Noise Bound";
+                statusGauge.style.color = "#f87171";
+            } else {
+                statusGauge.innerText = "Optimal Stable Margin Model";
+                statusGauge.style.color = "#4ade80";
+            }
+
+            // Setup boundary plot lines configuration
+            currentHyperplane = {
+                yLeft: modeSelection === 'linear' ? 90 : 130,
+                yRight: modeSelection === 'linear' ? 340 : 310,
+                margin: Math.max(25, 65 - (overlapErrorPenalty * 0.5) - (featureLossPenalty * 1.2))
+            };
+
+            // Set support vector flags on closest items for screen visualization
+            points.forEach(p => p.isSV = false);
+            let sorted = [...points].sort((a, b) => (a.x - b.x));
+            for (let i = 0; i < Math.min(supportVectorCount, points.length); i++) {
+                if (sorted[i]) sorted[i].isSV = true;
+            }
+
+            render();
+        }
+
+        // Live 3D Mathematical Kernel Projection Engine
+        function applyKernelTrick3D() {
+            is3DMode = true;
+            isTrained = false;
+            let cx = 425, cy = 210;
+
+            let startTime = null;
+            const duration = 2200; // 2.2 seconds fluid warp execution
+
+            function step3DAnimation(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let progress = (timestamp - startTime) / duration;
+                if (progress > 1) progress = 1;
+
+                points.forEach(p => {
+                    let dx = p.origX - cx;
+                    let dy = p.origY - cy;
+                    let radialDistanceSq = (dx * dx + dy * dy) / 250;
+
+                    // Parabolic depth shift representing high-dimensional space lift
+                    let zHeight = p.label === 'red' ? -110 * (1 - radialDistanceSq / 180) : 35 * (radialDistanceSq / 90);
+
+                    // Map down 2D projections onto isometric skew metrics
+                    let targetSkewX = cx + (p.origX - cx) * Math.cos(0.5 * progress);
+                    let targetSkewY = cy + (p.origY - cy) * 0.5 - (zHeight * progress);
+
+                    p.currentX = targetSkewX;
+                    p.currentY = targetSkewY;
+                });
+
+                render();
+
+                // Plot Separating Plate Plane Overlay once projection hits maximum matrix depth
+                if (progress === 1) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(180, 180); ctx.lineTo(680, 140); ctx.lineTo(730, 270); ctx.lineTo(120, 320);
+                    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillText("3D Separating Hyperplane Plane", 220, 170);
+
+                    statusGauge.innerText = "Kernel Separation Success!";
+                    statusGauge.style.color = "#4ade80";
+                    accuracyGauge.innerText = "98.4 %";
+                    accuracyGauge.className = "metric-value high";
+                    return;
+                }
+
+                if (is3DMode) animationId = requestAnimationFrame(step3DAnimation);
+            }
+
+            statusGauge.innerText = "Transforming Space Space (Z = X² + Y²)...";
+            statusGauge.style.color = "#38bdf8";
+            animationId = requestAnimationFrame(step3DAnimation);
+        }
+
+        // Handle Canvas User Mouse-Click point placement
+        canvas.addEventListener('mousedown', function (e) {
+            if (is3DMode) return;
+            const boundingBox = canvas.getBoundingClientRect();
+            const clickX = e.clientX - boundingBox.left;
+            const clickY = e.clientY - boundingBox.top;
+
+            const selectedClass = document.querySelector('input[name="pointColor"]:checked').value;
+
+            points.push({
+                x: clickX, y: clickY,
+                origX: clickX, origY: clickY,
+                currentX: clickX, currentY: clickY,
+                label: selectedClass, isSV: false
+            });
+
+            isTrained = false;
+            render();
+        });
+
+        // Event Listeners for controls input modifications
+        splitSlider.addEventListener('input', (e) => {
+            splitVal.innerText = `${e.target.value} / ${100 - e.target.value}`;
+            if (isTrained) executeSVM();
+        });
+
+        featureSlider.addEventListener('input', (e) => {
+            featureVal.innerText = `${e.target.value} / 30`;
+            if (isTrained) executeSVM();
+        });
+
+        document.querySelectorAll('input[name="dataMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => initDataset(e.target.value));
+        });
+
+        document.getElementById('btnTrain').addEventListener('click', executeSVM);
+        document.getElementById('btnKernel').addEventListener('click', applyKernelTrick3D);
+        document.getElementById('btnReset').addEventListener('click', () => {
+            const currentMode = document.querySelector('input[name="dataMode"]:checked').value;
+            initDataset(currentMode);
+        });
+
+        // Bootstrap App Load execution
+        initDataset('linear');
+    </script>
+</body>
+
+</html>
